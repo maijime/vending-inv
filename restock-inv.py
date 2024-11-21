@@ -39,5 +39,10 @@ restock_items = df[df["Restock"] > 0]
 print("\nItems that need to be restocked:\n")
 print(restock_items[["iName", "Restock"]].to_string(index=False))
 
-# Optionally, save the restock items to a new CSV file
-restock_items.to_csv("restock_items.csv", index=False)
+output_dir = "out/restock/"
+os.makedirs(output_dir, exist_ok=True)
+
+output_path = os.path.join(output_dir, "restock_items.csv")
+
+# Save the restock items to a new CSV file
+restock_items.to_csv(output_path, index=False)
