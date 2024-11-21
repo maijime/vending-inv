@@ -1,3 +1,13 @@
 .env
 __pycache__/
 .venv/
+
+# Ignore everything in in/ and out/ folders
+in/*
+out/*
+out/restock/*
+
+# But keep the folders themselves by not ignoring .gitkeep files
+!in/.gitkeep
+!out/.gitkeep
+!out/restock/.gitkeep

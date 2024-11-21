@@ -4,6 +4,8 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 import time
 from datetime import datetime
 import pandas as pd
@@ -28,8 +30,10 @@ chrome_options.add_argument("--headless")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
-
-driver = webdriver.Chrome(options=chrome_options)
+driver = webdriver.Chrome(
+    service=Service(ChromeDriverManager().install()),
+    options=chrome_options
+)
 driver.get("https://seedlive.com/login.i")
 
 # Step 2: Log into the website
@@ -37,8 +41,10 @@ time.sleep(2)  # wait for the page to load
 username = driver.find_element(By.NAME, "username")
 password = driver.find_element(By.NAME, "password")
 
-username_env = os.getenv('USERNAME')
-password_env = os.getenv('PASSWORD')
+username_env = os.getenv('SEED_USERNAME')
+password_env = os.getenv('SEED_PASSWORD')
+print(f"Logging in as {username_env}...")
+print(f"Password: {password_env}")
 
 username.send_keys(username_env)
 password.send_keys(password_env)

@@ -24,8 +24,8 @@ pip install -r requirements.txt
 Create a .env file in the root directory:
 
 ```text
-USERNAME=your_email@example.com
-PASSWORD=your_password
+SEED_USERNAME=your_email@example.com
+SEED_PASSWORD=your_password
 ```
 
 ## Project Structure
