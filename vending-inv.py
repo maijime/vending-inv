@@ -43,8 +43,6 @@ password = driver.find_element(By.NAME, "password")
 
 username_env = os.getenv('SEED_USERNAME')
 password_env = os.getenv('SEED_PASSWORD')
-print(f"Logging in as {username_env}...")
-print(f"Password: {password_env}")
 
 username.send_keys(username_env)
 password.send_keys(password_env)
