@@ -221,7 +221,10 @@ df_display_with_sections = pd.concat(section_rows, ignore_index=True)
 print(df_display_with_sections.to_string(index=False))
 
 # Extract total amount of all items sold
-totals_row = driver.find_element(By.CSS_SELECTOR, "tr.groupFooterRow0")
+time.sleep(2)
+totals_row = WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.CSS_SELECTOR, "tr.groupFooterRow0"))
+)
 total_amount = float(totals_row.find_element(By.CSS_SELECTOR, "td.colId_10 span").text.strip("$"))
 total_items_sold = int(totals_row.find_element(By.CSS_SELECTOR, "td.colId_13 span").text)
 
