@@ -4,8 +4,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+# ChromeDriver service imports removed - using system ChromeDriver
 import time
 from datetime import datetime
 import pandas as pd
@@ -30,10 +29,9 @@ chrome_options.add_argument("--headless")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
-driver = webdriver.Chrome(
-    service=Service(ChromeDriverManager().install()),
-    options=chrome_options
-)
+
+# Use system ChromeDriver (more reliable on Apple Silicon)
+driver = webdriver.Chrome(options=chrome_options)
 driver.get("https://seedlive.com/login.i")
 
 # Step 2: Log into the website
@@ -109,7 +107,11 @@ totals_link = totals_row.find_element(By.CSS_SELECTOR, "td.colId_8 a")
 totals_link.click()
 
 # Step 8: Extract item data from the next page
-time.sleep(2)  # wait for the page to load
+# Wait for items to be present
+WebDriverWait(driver, 15).until(
+    EC.presence_of_element_located((By.CSS_SELECTOR, "td.colId_12 span"))
+)
+
 items = driver.find_elements(By.CSS_SELECTOR, "td.colId_12 span")
 
 # Initialize inventory tracking dictionary
@@ -140,6 +142,7 @@ inventory = {
 }
 
 # Process each item
+print(f"\nProcessing {len(items)} items...")
 for item in items:
     item_text = item.text
     item_parts = item_text.split(", ")
@@ -220,13 +223,9 @@ df_display_with_sections = pd.concat(section_rows, ignore_index=True)
 # Display the table without index (only showing selected columns)
 print(df_display_with_sections.to_string(index=False))
 
-# Extract total amount of all items sold
-time.sleep(2)
-totals_row = WebDriverWait(driver, 10).until(
-    EC.presence_of_element_located((By.CSS_SELECTOR, "tr.groupFooterRow0"))
-)
-total_amount = float(totals_row.find_element(By.CSS_SELECTOR, "td.colId_10 span").text.strip("$"))
-total_items_sold = int(totals_row.find_element(By.CSS_SELECTOR, "td.colId_13 span").text)
+# Calculate totals from processed data
+total_items_sold = sum([inventory[item]["sold"] for item in inventory])
+total_amount = sum([inventory[item]["total_amount"] for item in inventory])
 
 # Print total items sold and total amount
 print(f"Total items sold: {total_items_sold}")
