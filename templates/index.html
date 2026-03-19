@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Dashboard Overview</h2>
+
+<div class="card">
+    <h3>Yesterday's Performance - {{ yesterday }}</h3>
+    <div class="metrics">
+        <div class="metric">
+            <div class="metric-value">${{ "%.2f"|format(yesterday_summary.total_revenue or 0) }}</div>
+            <div class="metric-label">Sales</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">${{ "%.2f"|format(yesterday_summary.total_profit or 0) }}</div>
+            <div class="metric-label">Profit</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">{{ yesterday_summary.total_items or 0 }}</div>
+            <div class="metric-label">Items Sold</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">{{ low_stock_count }}</div>
+            <div class="metric-label">Low Stock Items</div>
+        </div>
+    </div>
+</div>
+
+{% if restock_summary %}
+<div class="card" style="background: #e8f5e9;">
+    <h3>Since Last Restock - {{ restock_summary.start_date }}</h3>
+    <div class="metrics">
+        <div class="metric">
+            <div class="metric-value">${{ "%.2f"|format(restock_summary.total_revenue or 0) }}</div>
+            <div class="metric-label">Total Sales</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">${{ "%.2f"|format(restock_summary.total_profit or 0) }}</div>
+            <div class="metric-label">Total Profit</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">{{ restock_summary.total_items or 0 }}</div>
+            <div class="metric-label">Items Sold</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">{{ "%.1f"|format((restock_summary.total_profit or 0) / (restock_summary.total_revenue or 1) * 100) }}%</div>
+            <div class="metric-label">Profit Margin</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <h3>Quick Actions</h3>
+    <a href="/check-today" class="btn" style="background: #ff9800;">📊 Check Today's Sales (Live)</a>
+    <a href="/inventory" class="btn">📦 View Inventory</a>
+    <a href="/restock" class="btn">🔄 Restock Machine</a>
+    <a href="/sales" class="btn">📊 Sales History</a>
+    <a href="/items" class="btn">🏷️ Manage Items</a>
+</div>
+{% endblock %}

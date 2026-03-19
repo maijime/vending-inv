@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Settings</h2>
+
+<div class="card">
+    <h3>Notification Settings</h3>
+    <form method="POST">
+        <div class="form-group">
+            <label>Low Stock Threshold</label>
+            <input type="number" name="low_stock_threshold" value="{{ low_stock_threshold }}" min="1" max="20">
+            <p style="color: #7f8c8d; font-size: 0.9rem; margin-top: 0.5rem;">
+                Alert when inventory falls below this number (shown in email reports)
+            </p>
+        </div>
+        
+        <button type="submit" class="btn">Save Settings</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>📧 Email Alerts</h3>
+    <p style="color: #7f8c8d;">
+        <strong>Status:</strong> {% if gmail_configured %}<span style="color: #27ae60;">✓ Configured</span>{% else %}<span style="color: #e74c3c;">⚠️ Not configured</span>{% endif %}<br>
+        <strong>Recipient:</strong> musclefuelvending@gmail.com<br>
+        <strong>Schedule:</strong> Daily at 4:15 PM (if sales > 0)<br>
+        <strong>Includes:</strong> Sales summary, inventory levels, low stock alerts<br>
+    </p>
+    
+    {% if not gmail_configured %}
+    <div style="background: #fff3cd; padding: 1rem; border-radius: 5px; margin-top: 1rem;">
+        <strong>Setup Required:</strong><br>
+        1. Go to <a href="https://myaccount.google.com/security" target="_blank">Google Account Security</a><br>
+        2. Enable 2-Step Verification<br>
+        3. Go to <a href="https://myaccount.google.com/apppasswords" target="_blank">App Passwords</a><br>
+        4. Create password for "Mail"<br>
+        5. Edit .env file: <code>GMAIL_APP_PASSWORD=your_16_char_password</code><br>
+        6. Restart dashboard
+    </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>System Information</h3>
+    <p><strong>Database:</strong> vending.db</p>
+    <p><strong>Version:</strong> 2.0</p>
+    <p><strong>Email:</strong> {% if gmail_configured %}✓ Ready{% else %}⚠️ Setup required{% endif %}</p>
+</div>
+{% endblock %}

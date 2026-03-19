@@ -1,89 +1,148 @@
-# Vending Machine Inventory Management
+# Vending Machine Inventory Management System
 
-This script automates the process of tracking vending machine inventory and sales data. It logs into the vending machine management system, extracts sales data, and generates reports.
+**Version 2.0** - Automated inventory tracking, sales analytics, and reporting system.
 
-## Setup
+## ✨ Features
 
-### 1. Environment Setup
+- 🤖 **Automated Daily Collection** - Runs at 4:15 PM, no manual input needed
+- 📧 **Email Reports** - Daily sales summary sent to your inbox
+- 📊 **Web Dashboard** - View sales, inventory, and analytics
+- 🏠 **Home Inventory Tracking** - Track backup supplies
+- 💾 **SQLite Database** - No duplicate files, easy querying
+- 🔔 **Low Stock Alerts** - Get notified when items need restocking
 
-```bash
-# Create virtual environment
-python -m venv .venv
+## 🚀 Quick Start
 
-# Activate virtual environment
-# On macOS/Linux:
-source .venv/bin/activate
-# On Windows:
-.venv\Scripts\activate
+### 1. Setup Gmail App Password
 
-# Install required packages
-pip install -r requirements.txt
-```
+1. Visit https://myaccount.google.com/apppasswords
+2. Create app password for "Mail"
+3. Add to `.env`:
+   ```
+   GMAIL_USER=mikejc96@gmail.com
+   GMAIL_APP_PASSWORD=your_16_char_password
+   ```
 
-### 2. Configuration
-Create a .env file in the root directory:
-
-```text
-SEED_USERNAME=your_email@example.com
-SEED_PASSWORD=your_password
-```
-
-## Project Structure
-```text
-vending-inv/
-├── in/                  # Input files directory
-│   └── items.csv       # Item data
-├── out/                # Generated reports
-├── .env               
-├── .gitignore
-├── requirements.txt
-└── vending-inv.py
-```
-
-## Input File Format
-
-### items.csv Requirements
-
-The `in/items.csv` requires the following columns:
-
-- `iName:` Item name
-- `iNum:` Item number
-- `Cap:` Maximum capacity
-- `Cost:` Item price
-
-### Example Format
-
-```csv
-iName,iNum,Cap,Cost
-Cape Cod Chips BBQ,0111,7,1.25
-Coca Cola,0141,15,1.50
-```
-
-## Usage
-1. Make sure your `in/items.csv` is up to date with current inventory items
-
-2. Run the script:
+### 2. Initialize Database
 
 ```bash
-python3 run_all.py
+python3 database.py
 ```
 
-## Generated Reports
+### 3. Test Data Collection
 
-### Output Directory
+```bash
+python3 collect_data.py
+```
 
-The script generates the following in the `out/` directory:
-- Current inventory levels
-- Daily sales report
-- Revenue summary
+### 4. Start Dashboard
 
-### Dependencies
-- selenium
-- pandas
-- python-dotenv
-- webdriver_manager
+```bash
+python3 app.py
+```
 
-### Important Notes
-- Keep `.env` file secure and never commit to git
-- `out/` directory is git-ignored
-- Update `items.csv` when inventory changes
+Visit: http://localhost:5000
+
+## 📖 Full Documentation
+
+See [SETUP_GUIDE.md](SETUP_GUIDE.md) for:
+- Raspberry Pi setup instructions
+- Daily automation configuration
+- Troubleshooting guide
+- Advanced features
+
+## 🎯 Daily Automation
+
+The system automatically:
+1. Collects sales data at 4:15 PM
+2. Stores in database (prevents duplicates)
+3. Sends email report if sales > 0
+4. Updates inventory levels
+
+## 📁 Key Files
+
+- `database.py` - Database schema and operations
+- `collect_data.py` - Data collection from seedlive.com
+- `email_report.py` - Email reporting system
+- `daily_automation.py` - Main automation script
+- `app.py` - Web dashboard
+- `load_historical.py` - Import historical data
+
+## 🔧 Configuration
+
+### Change Low Stock Threshold
+
+Dashboard → Settings → Low Stock Threshold
+
+### Load Historical Data
+
+```bash
+python3 load_historical.py 2025-01-01 2025-12-31
+```
+
+### Manual Data Collection
+
+```bash
+python3 collect_data.py 2026-03-10
+```
+
+## 📊 Dashboard Pages
+
+- **Home** - Today's summary and quick stats
+- **Inventory** - Machine and home inventory levels
+- **Sales** - Historical sales with date filtering
+- **Items** - Add/edit/delete items (replaces CSV editing)
+- **Settings** - Configure thresholds and preferences
+
+## 🍓 Raspberry Pi Deployment
+
+See [SETUP_GUIDE.md](SETUP_GUIDE.md) for complete Pi setup instructions.
+
+Quick summary:
+1. Transfer project to Pi
+2. Setup cron job for 4:15 PM daily
+3. Enable dashboard auto-start
+4. Access at http://raspberrypi.local:5000
+
+## 🆕 What's New in v2.0
+
+- ✅ SQLite database (no more duplicate CSV files)
+- ✅ Automated daily collection (no manual date entry)
+- ✅ Email reports with HTML formatting
+- ✅ Web dashboard for all management tasks
+- ✅ Home inventory tracking
+- ✅ Configurable low stock alerts
+- ✅ Historical data import tool
+
+## 📝 Migration from v1.0
+
+Your old CSV files in `out/` are preserved but no longer used. The system now uses `vending.db`.
+
+To import historical data:
+```bash
+python3 load_historical.py 2025-01-01 2025-12-31
+```
+
+## 🐛 Troubleshooting
+
+**Email not sending?**
+- Check Gmail app password in `.env`
+- Verify 2-Step Verification enabled
+
+**Dashboard not loading?**
+- Check Flask is installed: `pip install flask`
+- Verify port 5000 is available
+
+**Data collection fails?**
+- Test manually: `python3 collect_data.py`
+- Check seedlive.com credentials in `.env`
+
+## 📞 Support
+
+Check logs in `logs/` directory or run scripts manually to see detailed errors.
+
+---
+
+**Created:** November 2024  
+**Updated:** March 2026  
+**Author:** Mike JC

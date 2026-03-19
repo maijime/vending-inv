@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>📊 Today's Sales (Live)</h2>
+
+{% if error %}
+<div class="card" style="background: #ffebee;">
+    <p style="color: #c62828;">Error: {{ error }}</p>
+    <a href="/" class="btn">← Back to Dashboard</a>
+</div>
+{% else %}
+
+<div class="card" style="background: #fff3e0;">
+    <p style="color: #e65100; margin-bottom: 0;">
+        ⚠️ <strong>Live Data</strong> - Updated as of {{ current_time }}. This data is NOT saved to history.
+    </p>
+</div>
+
+<div class="card">
+    <h3>Today's Performance - {{ today }}</h3>
+    <div class="metrics">
+        <div class="metric">
+            <div class="metric-value">${{ "%.2f"|format(summary.total_revenue) }}</div>
+            <div class="metric-label">Sales</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">${{ "%.2f"|format(summary.total_profit) }}</div>
+            <div class="metric-label">Profit</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">{{ summary.total_items }}</div>
+            <div class="metric-label">Items Sold</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">{{ "%.1f"|format((summary.total_profit / summary.total_revenue * 100) if summary.total_revenue > 0 else 0) }}%</div>
+            <div class="metric-label">Profit Margin</div>
+        </div>
+    </div>
+</div>
+
+{% if items_sold %}
+<div class="card">
+    <h3>Items Sold Today</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Revenue</th>
+                <th>Profit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items_sold | sort(attribute='sold', reverse=True) %}
+            <tr>
+                <td>{{ item.item_name }}</td>
+                <td>{{ item.sold }}</td>
+                <td>${{ "%.2f"|format(item.sales) }}</td>
+                <td>${{ "%.2f"|format(item.profit) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if low_stock %}
+<div class="card">
+    <h3>🔴 Low Stock Alerts (< {{ low_stock_threshold }})</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Current Level</th>
+                <th>Capacity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in low_stock %}
+            <tr>
+                <td>{{ item.item_name }}</td>
+                <td class="low-stock">{{ item.inventory }}/{{ item.capacity }}</td>
+                <td>{{ item.capacity }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="card">
+    <a href="/" class="btn">← Back to Dashboard</a>
+    <a href="/check-today" class="btn">🔄 Refresh</a>
+</div>
+
+{% endif %}
+{% endblock %}

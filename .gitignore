@@ -1,6 +1,9 @@
 .env
 __pycache__/
 .venv/
+*.db
+*.db-journal
+logs/
 
 # Ignore everything in in/ and out/ folders
 in/*
