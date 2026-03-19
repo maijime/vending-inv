@@ -17,7 +17,7 @@ Designed to run on a Raspberry Pi with [Tailscale](https://tailscale.com) for re
 
 ## Screenshots
 
-Dashboard shows yesterday's performance, 30-day revenue chart, week-over-week comparison, and quick actions.
+Dashboard shows since-last-restock performance, revenue chart, today's sales, and week-over-week comparison.
 
 ## Getting Started
 
@@ -26,6 +26,11 @@ Dashboard shows yesterday's performance, 30-day revenue chart, week-over-week co
 - Python 3.9+
 - Chrome/Chromium + chromedriver
 - A [Seedlive](https://seedlive.com) account with vending machine data
+
+On Raspberry Pi:
+```bash
+sudo apt install chromium-chromedriver
+```
 
 ### Install
 
@@ -56,7 +61,21 @@ Gmail app password setup: [Google Account → Security → App Passwords](https:
 python3 database.py
 ```
 
-This creates the SQLite database and seeds default items. If `in/items.csv` exists, items are imported from there instead.
+This creates the SQLite database, seeds default items, and runs any pending migrations (products table, etc.).
+
+Set your last restock date (used as the default date range across the dashboard):
+
+```bash
+python3 -c "
+import sqlite3
+conn = sqlite3.connect('vending.db')
+conn.execute(\"INSERT OR REPLACE INTO settings (key, value) VALUES ('last_restock_date', '2026-03-02');\")
+conn.commit()
+conn.close()
+"
+```
+
+Or set it later through the Settings page in the dashboard.
 
 ### Run
 

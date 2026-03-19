@@ -3,6 +3,7 @@
 ## Install
 
 ```bash
+sudo apt install chromium-chromedriver
 git clone https://github.com/maijime/vending-inv.git
 cd vending-inv
 python3 -m venv .venv
@@ -23,6 +24,18 @@ python3 load_historical.py 2024-07-01 2026-03-19
 Option B — copy from your Mac:
 ```bash
 scp user@mac:~/code/py/vending-inv/vending.db ~/vending-inv/
+python3 database.py  # runs any pending migrations
+```
+
+Then set your restock date:
+```bash
+python3 -c "
+import sqlite3
+conn = sqlite3.connect('vending.db')
+conn.execute(\"INSERT OR REPLACE INTO settings (key, value) VALUES ('last_restock_date', '2026-03-02');\")
+conn.commit()
+conn.close()
+"
 ```
 
 ## Dashboard (systemd)
