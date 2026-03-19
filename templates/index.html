@@ -27,7 +27,7 @@
 </div>
 
 <!-- Revenue Chart -->
-<div class="card-header">Revenue (30 Days)</div>
+<div class="card-header">Revenue {{ 'Since Restock' if restock_summary else '(30 Days)' }}</div>
 <div class="card">
     <div class="chart-container">
         <canvas id="revenueChart"></canvas>
@@ -105,7 +105,7 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script>
-fetch('/api/sales-chart?days=30')
+fetch('/api/sales-chart?start_date={{ restock_summary.start_date if restock_summary else "" }}')
     .then(r => r.json())
     .then(data => {
         if (!data.length) return;

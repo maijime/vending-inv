@@ -225,7 +225,9 @@ def restock():
 @app.route('/sales')
 def sales():
     end_date = request.args.get('end_date', datetime.now().strftime("%Y-%m-%d"))
-    start_date = request.args.get('start_date', (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"))
+    last_restock = db.get_setting('last_restock_date')
+    default_start = last_restock or (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    start_date = request.args.get('start_date', default_start)
     conn = db.get_connection()
     c = conn.cursor()
     c.execute('''SELECT date, SUM(quantity_sold) as items_sold, SUM(revenue) as revenue, SUM(profit) as profit
@@ -385,7 +387,7 @@ def settings():
 def sales_chart_data():
     days = int(request.args.get('days', 30))
     end_date = datetime.now().strftime("%Y-%m-%d")
-    start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    start_date = request.args.get('start_date') or (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
     conn = db.get_connection()
     c = conn.cursor()
     c.execute('SELECT date, SUM(revenue) as revenue, SUM(profit) as profit FROM daily_sales WHERE date BETWEEN ? AND ? GROUP BY date ORDER BY date',
