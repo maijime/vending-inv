@@ -18,19 +18,74 @@
 </div>
 {% endif %}
 
-<div class="card-header">Machine Inventory</div>
+<!-- Add Stock (Shopping Run) -->
+<div class="card-header">Add Stock (Shopping Run)</div>
 <div class="card">
-    {% for item in machine_inventory %}
+    <form method="POST" action="/inventory/add-stock">
+        {% for cat, prods in categories.items() %}
+        <div class="list-row" style="background:var(--bg); font-size:12px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px;">
+            {{ cat }}
+        </div>
+        {% for p in prods %}
+        <div class="form-field">
+            <div>
+                <div style="font-size:15px;">{{ p.name }}</div>
+                <div style="font-size:12px; color:var(--text2);">Have: {{ p.home_qty }} · ${{ "%.2f"|format(p.unit_cost) }}</div>
+            </div>
+            <input type="number" name="add_{{ p.id }}" min="0" placeholder="0" style="width:60px;">
+        </div>
+        {% endfor %}
+        {% endfor %}
+        <div class="btn-row">
+            <button type="submit" class="btn btn-full">Add to Inventory</button>
+        </div>
+    </form>
+</div>
+
+<!-- Current Home Stock -->
+<div class="card-header">Home Stock by Product</div>
+<div class="card">
+    <form method="POST" action="/inventory/update-stock">
+        {% for cat, prods in categories.items() %}
+        <div class="list-row" style="background:var(--bg); font-size:12px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px;">
+            {{ cat }}
+        </div>
+        {% for p in prods %}
+        <div class="form-field">
+            <div>
+                <div style="font-size:15px;">{{ p.name }}</div>
+                <div style="font-size:12px; color:var(--text2);">
+                    {{ p.slots | length }} slot{{ 's' if p.slots | length > 1 }}
+                    · ${{ "%.2f"|format(p.unit_cost) }}/ea
+                </div>
+            </div>
+            <input type="number" name="qty_{{ p.id }}" value="{{ p.home_qty }}" min="0"
+                   style="width:60px; text-align:center; font-size:15px; border:1px solid var(--sep); border-radius:8px; padding:6px; background:var(--bg);">
+        </div>
+        {% endfor %}
+        {% endfor %}
+        <div class="btn-row">
+            <button type="submit" class="btn btn-full btn-secondary">Set Stock Levels</button>
+        </div>
+    </form>
+</div>
+
+<!-- Machine Status -->
+<div class="card-header">Machine Slots</div>
+<div class="card">
+    {% for cat, prods in categories.items() %}
+    {% for p in prods %}
+    {% for slot in p.slots %}
     <div class="list-row">
         <div>
-            <div class="list-row-label">{{ item.item_name }}</div>
-            <div style="font-size:12px; color:var(--text2);">#{{ item.item_num }}</div>
+            <div class="list-row-label">{{ p.name }}</div>
+            <div style="font-size:12px; color:var(--text2);">#{{ slot.item_num }} · Cap: {{ slot.capacity }}</div>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
-            <span class="list-row-value">{{ item.current_level }}/{{ item.capacity }}</span>
-            {% if item.current_level < low_stock_threshold %}
+            <span class="list-row-value">{{ slot.current_level }}/{{ slot.capacity }}</span>
+            {% if slot.current_level < low_stock_threshold %}
                 <span class="badge badge-red">Low</span>
-            {% elif item.current_level == item.capacity %}
+            {% elif slot.current_level == slot.capacity %}
                 <span class="badge badge-green">Full</span>
             {% else %}
                 <span class="badge badge-green">OK</span>
@@ -38,20 +93,7 @@
         </div>
     </div>
     {% endfor %}
-</div>
-
-<div class="card-header">Home Inventory</div>
-<div class="card">
-    {% for item in home_inventory %}
-    <div class="list-row">
-        <span class="list-row-label">{{ item.item_name }}</span>
-        <form method="POST" action="/home-inventory/update" style="display:flex; align-items:center; gap:6px;">
-            <input type="hidden" name="item_num" value="{{ item.item_num }}">
-            <input type="number" name="quantity" value="{{ item.quantity }}" min="0"
-                   style="width:60px; text-align:center; font-size:15px; border:1px solid var(--sep); border-radius:8px; padding:6px; background:var(--bg);">
-            <button type="submit" class="btn btn-small btn-secondary">Set</button>
-        </form>
-    </div>
+    {% endfor %}
     {% endfor %}
 </div>
 {% endblock %}

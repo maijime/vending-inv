@@ -2,52 +2,42 @@
 {% block header_title %}🔄 Restock{% endblock %}
 
 {% block content %}
-<!-- Restock Machine -->
 <div class="card-header">Restock Machine</div>
 <div class="card">
-    <form method="POST">
+    <form method="POST" id="restockForm">
         <input type="hidden" name="action" value="restock_machine">
         <div class="form-field">
             <label>Date</label>
             <input type="date" name="date" value="{{ today }}" required>
         </div>
-        {% for item in machine_inventory %}
+
+        {% for cat, prods in categories.items() %}
+        <div class="list-row" style="background:var(--bg); font-size:12px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px;">
+            {{ cat }}
+        </div>
+        {% for p in prods %}
+        {% for slot in p.slots %}
         <div class="form-field">
             <div>
-                <div style="font-size:15px;">{{ item.item_name }}</div>
+                <div style="font-size:15px;">{{ p.name }}</div>
                 <div style="font-size:12px; color:var(--text2);">
-                    Now: {{ item.current_level }}/{{ item.capacity }}
-                    · Home: {% set home = home_inventory | selectattr('item_num', 'equalto', item.item_num) | first %}{{ home.quantity if home else 0 }}
+                    #{{ slot.item_num }} · {{ slot.current_level }}/{{ slot.capacity }}
+                    {% if slot.need > 0 %} · <span style="color:var(--orange);">Need {{ slot.need }}</span>{% endif %}
+                    · Home: {{ p.home_qty }}
                 </div>
             </div>
-            <input type="number" name="machine_{{ item.item_num }}"
-                   min="0" max="{{ item.capacity }}" placeholder="{{ item.current_level }}"
-                   style="width:70px;">
+            <input type="number" name="slot_{{ slot.item_num }}" class="restock-input"
+                   min="0" max="{{ slot.capacity }}" placeholder="{{ slot.current_level }}"
+                   data-capacity="{{ slot.capacity }}"
+                   style="width:60px;">
         </div>
         {% endfor %}
-        <div class="btn-row">
-            <button type="submit" class="btn btn-full">Save Machine Restock</button>
-        </div>
-    </form>
-</div>
+        {% endfor %}
+        {% endfor %}
 
-<!-- Add Home Inventory -->
-<div class="card-header">Add Home Inventory</div>
-<div class="card">
-    <form method="POST">
-        <input type="hidden" name="action" value="add_home_inventory">
-        {% for item in home_inventory %}
-        <div class="form-field">
-            <div>
-                <div style="font-size:15px;">{{ item.item_name }}</div>
-                <div style="font-size:12px; color:var(--text2);">Have: {{ item.quantity }}</div>
-            </div>
-            <input type="number" name="home_{{ item.item_num }}"
-                   min="0" placeholder="0" style="width:70px;">
-        </div>
-        {% endfor %}
-        <div class="btn-row">
-            <button type="submit" class="btn btn-full btn-secondary">Add to Home Stock</button>
+        <div class="btn-row" style="flex-direction:column; gap:8px;">
+            <button type="button" onclick="fillAll()" class="btn btn-full btn-secondary">Fill All to Capacity</button>
+            <button type="submit" class="btn btn-full">Save Restock</button>
         </div>
     </form>
 </div>
@@ -55,8 +45,18 @@
 <div class="card-header">How It Works</div>
 <div class="card">
     <div class="card-body" style="font-size:14px; color:var(--text2); line-height:1.5;">
-        <strong style="color:var(--text);">Restock Machine:</strong> Enter NEW levels after restocking. Auto-deducts from home stock.<br><br>
-        <strong style="color:var(--text);">Add Home Stock:</strong> Enter quantities bought. Added to current home totals.
+        Enter the <strong style="color:var(--text);">new level</strong> for each slot after restocking.
+        Items added are automatically deducted from that product's home stock.
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function fillAll() {
+    document.querySelectorAll('.restock-input').forEach(input => {
+        input.value = input.dataset.capacity;
+    });
+}
+</script>
 {% endblock %}
