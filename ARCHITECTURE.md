@@ -174,7 +174,7 @@
 └─────────────────────────────────────┘
          ↓                    ↓
     [Email]            [Local Network]
-  mikejc96@gmail.com   http://raspberrypi.local:5000
+  your_email@gmail.com   http://raspberrypi.local:5000
 ```
 
 ### Option 2: Local Mac (Development)

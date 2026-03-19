@@ -221,4 +221,4 @@ if __name__ == '__main__':
             'profit': 0
         })
     
-    send_email_report('musclefuelvending@gmail.com', date, sales_data, summary)
+    send_email_report(os.getenv('GMAIL_USER'), date, sales_data, summary)

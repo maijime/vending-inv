@@ -2,7 +2,7 @@
 
 ## What You Need
 
-✅ Gmail account: `musclefuelvending@gmail.com` (you already have this)  
+✅ Gmail account: `your_email@gmail.com` (you already have this)  
 ✅ 5 minutes  
 ✅ **Cost: $0 (completely free!)**
 
@@ -13,7 +13,7 @@
 ### Step 1: Enable 2-Step Verification
 
 1. Go to: https://myaccount.google.com/security
-2. Sign in with `musclefuelvending@gmail.com`
+2. Sign in with `your_email@gmail.com`
 3. Scroll to "2-Step Verification"
 4. Click "Get Started" or "Turn On"
 5. Follow prompts (usually verify with phone number)
@@ -21,7 +21,7 @@
 ### Step 2: Create App Password
 
 1. Go to: https://myaccount.google.com/apppasswords
-2. Sign in with `musclefuelvending@gmail.com`
+2. Sign in with `your_email@gmail.com`
 3. Under "Select app" → Choose **"Mail"**
 4. Under "Select device" → Choose **"Other"** → Type **"Vending System"**
 5. Click **"Generate"**
@@ -53,7 +53,7 @@ source .venv/bin/activate
 python3 email_report.py
 ```
 
-**You should receive a test email at musclefuelvending@gmail.com!**
+**You should receive a test email at your_email@gmail.com!**
 
 ---
 

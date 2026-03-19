@@ -2,6 +2,10 @@
 """Main daily automation script - runs at 4:15pm daily."""
 from datetime import datetime
 import database as db
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 from collect_data import collect_daily_data
 from email_report import send_email_report
 
@@ -32,7 +36,7 @@ def run_daily_automation():
     
     # Send email if there were sales
     if has_sales:
-        send_email_report('musclefuelvending@gmail.com', date, sales_data, summary)
+        send_email_report(os.getenv('GMAIL_USER'), date, sales_data, summary)
     else:
         print("ℹ️  No sales today. Skipping email report.")
     

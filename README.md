@@ -19,7 +19,7 @@
 2. Create app password for "Mail"
 3. Add to `.env`:
    ```
-   GMAIL_USER=mikejc96@gmail.com
+   GMAIL_USER=your_email@gmail.com
    GMAIL_APP_PASSWORD=your_16_char_password
    ```
 

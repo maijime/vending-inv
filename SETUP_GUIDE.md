@@ -45,7 +45,7 @@ To send email reports, you need a Gmail App Password:
 Edit `.env` file and add your Gmail app password:
 
 ```bash
-GMAIL_USER=mikejc96@gmail.com
+GMAIL_USER=your_email@gmail.com
 GMAIL_APP_PASSWORD=your_16_char_password_here
 ```
 

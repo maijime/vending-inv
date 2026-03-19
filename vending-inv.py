@@ -106,8 +106,7 @@ totals_row = WebDriverWait(driver, 10).until(
 totals_link = totals_row.find_element(By.CSS_SELECTOR, "td.colId_8 a")
 totals_link.click()
 
-# Step 8: Extract item data from the next page
-# Wait for items to be present
+# Step 8: Extract item data from the next pa# Wait for items to be present
 WebDriverWait(driver, 15).until(
     EC.presence_of_element_located((By.CSS_SELECTOR, "td.colId_12 span"))
 )
