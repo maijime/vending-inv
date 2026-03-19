@@ -45,8 +45,6 @@ def get_products_with_slots():
 @app.route('/')
 def index():
     today = datetime.now().strftime("%Y-%m-%d")
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    yesterday_summary = db.get_sales_summary(yesterday, yesterday)
 
     inventory = db.get_latest_inventory()
     low_stock_threshold = int(db.get_setting('low_stock_threshold') or 3)
@@ -87,9 +85,9 @@ def index():
     hour = now.hour
     greeting = "Good morning" if hour < 12 else "Good afternoon" if hour < 17 else "Good evening"
 
-    return render_template('index.html', today=today, yesterday=yesterday,
-                           yesterday_summary=yesterday_summary, restock_summary=restock_summary,
-                           low_stock_count=low_stock_count, inventory_count=len(inventory),
+    return render_template('index.html', today=today,
+                           restock_summary=restock_summary,
+                           low_stock_count=low_stock_count,
                            week_comparison=week_comparison, best_day=best_day, greeting=greeting)
 
 
@@ -381,6 +379,23 @@ def settings():
                            last_restock_date=db.get_setting('last_restock_date'),
                            gmail_configured=gmail_configured,
                            item_count=item_count, product_count=product_count)
+
+
+@app.route('/api/today')
+def today_data():
+    """Today's sales from DB (updated by cron at 4:15 PM)."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    conn = db.get_connection()
+    c = conn.cursor()
+    c.execute('SELECT SUM(revenue) as rev, SUM(profit) as profit, SUM(quantity_sold) as items FROM daily_sales WHERE date = ?', (today,))
+    row = c.fetchone()
+    conn.close()
+    return jsonify({
+        'revenue': row['rev'] or 0,
+        'profit': row['profit'] or 0,
+        'items': row['items'] or 0,
+        'as_of': datetime.now().strftime('%I:%M %p')
+    })
 
 
 @app.route('/api/sales-chart')

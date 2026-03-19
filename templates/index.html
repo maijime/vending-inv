@@ -1,22 +1,22 @@
 {% extends "base.html" %}
 {% block header_title %}💪 Dashboard{% endblock %}
-{% block header_sub %}<div class="header-sub">{{ greeting }} · {{ yesterday }}</div>{% endblock %}
+{% block header_sub %}<div class="header-sub">{{ greeting }}</div>{% endblock %}
 
 {% block content %}
-<!-- Yesterday's Performance -->
-<div class="card-header">Yesterday's Performance</div>
+{% if restock_summary %}
+<div class="card-header">Since Last Restock · {{ restock_summary.start_date }}</div>
 <div class="card">
     <div class="metrics">
         <div class="metric">
-            <div class="metric-value">${{ "%.2f"|format(yesterday_summary.total_revenue or 0) }}</div>
+            <div class="metric-value">${{ "%.2f"|format(restock_summary.total_revenue or 0) }}</div>
             <div class="metric-label">Revenue</div>
         </div>
         <div class="metric">
-            <div class="metric-value green">${{ "%.2f"|format(yesterday_summary.total_profit or 0) }}</div>
+            <div class="metric-value green">${{ "%.2f"|format(restock_summary.total_profit or 0) }}</div>
             <div class="metric-label">Profit</div>
         </div>
         <div class="metric">
-            <div class="metric-value">{{ yesterday_summary.total_items or 0 }}</div>
+            <div class="metric-value">{{ restock_summary.total_items or 0 }}</div>
             <div class="metric-label">Items Sold</div>
         </div>
         <div class="metric">
@@ -25,8 +25,8 @@
         </div>
     </div>
 </div>
+{% endif %}
 
-<!-- Revenue Chart -->
 <div class="card-header">Revenue {{ 'Since Restock' if restock_summary else '(30 Days)' }}</div>
 <div class="card">
     <div class="chart-container">
@@ -34,44 +34,27 @@
     </div>
 </div>
 
-<!-- Since Last Restock -->
-{% if restock_summary %}
-<div class="card-header">Since Last Restock · {{ restock_summary.start_date }}</div>
+<div class="card-header">Today · <span id="todayTime" style="font-weight:400;"></span></div>
 <div class="card">
-    <div class="list-row">
-        <span class="list-row-label">Revenue</span>
-        <span class="list-row-value">${{ "%.2f"|format(restock_summary.total_revenue or 0) }}</span>
+    <div class="metrics" id="todayMetrics">
+        <div class="metric">
+            <div class="metric-value" id="todayRev">—</div>
+            <div class="metric-label">Revenue</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value green" id="todayProfit">—</div>
+            <div class="metric-label">Profit</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value" id="todayItems">—</div>
+            <div class="metric-label">Items</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value" id="todayMargin">—</div>
+            <div class="metric-label">Margin</div>
+        </div>
     </div>
-    <div class="list-row">
-        <span class="list-row-label">Profit</span>
-        <span class="list-row-value green">${{ "%.2f"|format(restock_summary.total_profit or 0) }}</span>
-    </div>
-    <div class="list-row">
-        <span class="list-row-label">Items Sold</span>
-        <span class="list-row-value">{{ restock_summary.total_items or 0 }}</span>
-    </div>
-    <div class="list-row">
-        <span class="list-row-label">Margin</span>
-        <span class="list-row-value green">{{ "%.1f"|format((restock_summary.total_profit or 0) / (restock_summary.total_revenue or 1) * 100) }}%</span>
-    </div>
-</div>
-{% endif %}
-
-<!-- Quick Actions -->
-<div class="card-header">Quick Actions</div>
-<div class="card">
-    <a href="/check-today" class="list-row" style="text-decoration:none; color:var(--text);">
-        <span class="list-row-label">📊 Check Today's Sales (Live)</span>
-        <span class="list-row-value blue">→</span>
-    </a>
-    <a href="/restock" class="list-row" style="text-decoration:none; color:var(--text);">
-        <span class="list-row-label">🔄 Restock Machine</span>
-        <span class="list-row-value blue">→</span>
-    </a>
-    <a href="/inventory" class="list-row" style="text-decoration:none; color:var(--text);">
-        <span class="list-row-label">📦 View Inventory</span>
-        <span class="list-row-value blue">→</span>
-    </a>
+    <div id="todayStatus" style="padding:4px 16px 10px; font-size:12px; color:var(--text2); text-align:center;"></div>
 </div>
 
 {% if week_comparison %}
@@ -117,11 +100,9 @@ fetch('/api/sales-chart?start_date={{ restock_summary.start_date if restock_summ
                     return dt.toLocaleDateString('en-US', {month:'short', day:'numeric'});
                 }),
                 datasets: [{
-                    label: 'Revenue',
                     data: data.map(d => d.revenue),
                     backgroundColor: 'rgba(0,122,255,0.6)',
-                    borderRadius: 4,
-                    borderSkipped: false,
+                    borderRadius: 4, borderSkipped: false,
                 }]
             },
             options: {
@@ -134,5 +115,23 @@ fetch('/api/sales-chart?start_date={{ restock_summary.start_date if restock_summ
             }
         });
     });
+
+function loadToday() {
+    fetch('/api/today')
+        .then(r => r.json())
+        .then(d => {
+            document.getElementById('todayRev').textContent = '$' + d.revenue.toFixed(2);
+            document.getElementById('todayProfit').textContent = '$' + d.profit.toFixed(2);
+            document.getElementById('todayItems').textContent = d.items;
+            document.getElementById('todayMargin').textContent = d.items > 0 ? Math.round(d.profit / d.revenue * 100) + '%' : '—';
+            document.getElementById('todayTime').textContent = d.as_of;
+            document.getElementById('todayStatus').textContent = d.items > 0 ? '' : 'No sales recorded yet';
+        })
+        .catch(() => {
+            document.getElementById('todayStatus').textContent = 'Waiting for data';
+        });
+}
+loadToday();
+setInterval(loadToday, 3600000);
 </script>
 {% endblock %}
