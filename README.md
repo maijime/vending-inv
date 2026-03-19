@@ -1,148 +1,133 @@
-# Vending Machine Inventory Management System
+# Muscle Fuel Vending — Inventory & Sales Tracker
 
-**Version 2.0** - Automated inventory tracking, sales analytics, and reporting system.
+A lightweight inventory management and sales analytics system for vending machine operators. Built with Flask, SQLite, and Selenium.
 
-## ✨ Features
+Designed to run on a Raspberry Pi with [Tailscale](https://tailscale.com) for remote access.
 
-- 🤖 **Automated Daily Collection** - Runs at 4:15 PM, no manual input needed
-- 📧 **Email Reports** - Daily sales summary sent to your inbox
-- 📊 **Web Dashboard** - View sales, inventory, and analytics
-- 🏠 **Home Inventory Tracking** - Track backup supplies
-- 💾 **SQLite Database** - No duplicate files, easy querying
-- 🔔 **Low Stock Alerts** - Get notified when items need restocking
+## Features
 
-## 🚀 Quick Start
+- **Automated data collection** from Seedlive portal (daily at 4:15 PM via cron)
+- **Mobile-first web dashboard** with iOS-style UI
+- **Email reports** via Gmail with sales summary and low stock alerts
+- **Inventory tracking** for both machine and home backup stock
+- **Restock workflow** — enter new levels, auto-deducts from home inventory
+- **Historical import** — bulk load past sales data in one shot
+- **CSV export** for accounting and tax prep
+- **Live sales check** — pull real-time data without saving to history
 
-### 1. Setup Gmail App Password
+## Screenshots
 
-1. Visit https://myaccount.google.com/apppasswords
-2. Create app password for "Mail"
-3. Add to `.env`:
-   ```
-   GMAIL_USER=your_email@gmail.com
-   GMAIL_APP_PASSWORD=your_16_char_password
-   ```
+Dashboard shows yesterday's performance, 30-day revenue chart, week-over-week comparison, and quick actions.
 
-### 2. Initialize Database
+## Getting Started
+
+### Prerequisites
+
+- Python 3.9+
+- Chrome/Chromium + chromedriver
+- A [Seedlive](https://seedlive.com) account with vending machine data
+
+### Install
+
+```bash
+git clone https://github.com/maijime/vending-inv.git
+cd vending-inv
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Configure
+
+Create a `.env` file:
+
+```
+SEED_USERNAME=your_seedlive_email
+SEED_PASSWORD=your_seedlive_password
+GMAIL_USER=your_email@gmail.com
+GMAIL_APP_PASSWORD=your_16_char_app_password
+```
+
+Gmail app password setup: [Google Account → Security → App Passwords](https://myaccount.google.com/apppasswords)
+
+### Initialize
 
 ```bash
 python3 database.py
 ```
 
-### 3. Test Data Collection
+This creates the SQLite database and seeds default items. If `in/items.csv` exists, items are imported from there instead.
 
-```bash
-python3 collect_data.py
-```
-
-### 4. Start Dashboard
+### Run
 
 ```bash
 python3 app.py
 ```
 
-Visit: http://localhost:5000
+Open `http://localhost:5001` on your phone or browser.
 
-## 📖 Full Documentation
+## Usage
 
-See [SETUP_GUIDE.md](SETUP_GUIDE.md) for:
-- Raspberry Pi setup instructions
-- Daily automation configuration
-- Troubleshooting guide
-- Advanced features
+### Daily Automation
 
-## 🎯 Daily Automation
+Set up a cron job to collect data and send email reports:
 
-The system automatically:
-1. Collects sales data at 4:15 PM
-2. Stores in database (prevents duplicates)
-3. Sends email report if sales > 0
-4. Updates inventory levels
+```bash
+crontab -e
+# Add:
+15 16 * * 1-5 cd /path/to/vending-inv && .venv/bin/python3 daily_automation.py
+```
 
-## 📁 Key Files
-
-- `database.py` - Database schema and operations
-- `collect_data.py` - Data collection from seedlive.com
-- `email_report.py` - Email reporting system
-- `daily_automation.py` - Main automation script
-- `app.py` - Web dashboard
-- `load_historical.py` - Import historical data
-
-## 🔧 Configuration
-
-### Change Low Stock Threshold
-
-Dashboard → Settings → Low Stock Threshold
+Runs at 4:15 PM, Monday–Friday. Skips email if no sales.
 
 ### Load Historical Data
 
 ```bash
-python3 load_historical.py 2025-01-01 2025-12-31
+python3 load_historical.py 2024-07-01 2026-03-19
 ```
 
-### Manual Data Collection
+Uses Seedlive's "Entire Range" report — one login, all data at once. Handles pagination automatically.
 
-```bash
-python3 collect_data.py 2026-03-10
+### Dashboard on Raspberry Pi
+
+1. Clone repo and set up `.env` on the Pi
+2. Run `python3 database.py` to initialize (or SCP your existing `vending.db`)
+3. Set up a systemd service for the dashboard
+4. Set up cron for daily automation
+5. Install [Tailscale](https://tailscale.com) for remote access outside your network
+
+## Project Structure
+
+```
+├── app.py                 # Flask dashboard (port 5001)
+├── database.py            # SQLite schema and queries
+├── collect_data.py        # Seedlive scraper
+├── daily_automation.py    # Cron entry point (collect + email)
+├── email_report.py        # HTML email reports via Gmail
+├── load_historical.py     # Bulk historical data import
+├── check_today.py         # CLI live sales check
+├── templates/             # Jinja2 templates (iOS-style UI)
+├── requirements.txt
+├── .env                   # Credentials (not committed)
+├── vending.db             # SQLite database (not committed)
+└── legacy/                # Original v1 scripts (preserved)
 ```
 
-## 📊 Dashboard Pages
+## Configuration
 
-- **Home** - Today's summary and quick stats
-- **Inventory** - Machine and home inventory levels
-- **Sales** - Historical sales with date filtering
-- **Items** - Add/edit/delete items (replaces CSV editing)
-- **Settings** - Configure thresholds and preferences
+All settings are managed through the dashboard at `/settings`:
 
-## 🍓 Raspberry Pi Deployment
+- **Low stock threshold** — alert when inventory drops below this number
+- **Last restock date** — tracks when you last restocked the machine
+- **Email reports** — status and schedule info
 
-See [SETUP_GUIDE.md](SETUP_GUIDE.md) for complete Pi setup instructions.
+## Tech Stack
 
-Quick summary:
-1. Transfer project to Pi
-2. Setup cron job for 4:15 PM daily
-3. Enable dashboard auto-start
-4. Access at http://raspberrypi.local:5000
+- **Backend:** Flask, SQLite, Selenium
+- **Frontend:** Vanilla HTML/CSS (iOS-style), Chart.js
+- **Automation:** cron (data collection), systemd (dashboard)
+- **Deployment:** Raspberry Pi + Tailscale
 
-## 🆕 What's New in v2.0
+## License
 
-- ✅ SQLite database (no more duplicate CSV files)
-- ✅ Automated daily collection (no manual date entry)
-- ✅ Email reports with HTML formatting
-- ✅ Web dashboard for all management tasks
-- ✅ Home inventory tracking
-- ✅ Configurable low stock alerts
-- ✅ Historical data import tool
-
-## 📝 Migration from v1.0
-
-Your old CSV files in `out/` are preserved but no longer used. The system now uses `vending.db`.
-
-To import historical data:
-```bash
-python3 load_historical.py 2025-01-01 2025-12-31
-```
-
-## 🐛 Troubleshooting
-
-**Email not sending?**
-- Check Gmail app password in `.env`
-- Verify 2-Step Verification enabled
-
-**Dashboard not loading?**
-- Check Flask is installed: `pip install flask`
-- Verify port 5000 is available
-
-**Data collection fails?**
-- Test manually: `python3 collect_data.py`
-- Check seedlive.com credentials in `.env`
-
-## 📞 Support
-
-Check logs in `logs/` directory or run scripts manually to see detailed errors.
-
----
-
-**Created:** November 2024  
-**Updated:** March 2026  
-**Author:** Mike JC
+MIT

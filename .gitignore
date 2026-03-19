@@ -1,16 +1,16 @@
 .env
-__pycache__/
 .venv/
+__pycache__/
 *.db
 *.db-journal
+*.pyc
+.DS_Store
 logs/
 
-# Ignore everything in in/ and out/ folders
+# Data folders (keep structure via .gitkeep)
 in/*
 out/*
 out/restock/*
-
-# But keep the folders themselves by not ignoring .gitkeep files
 !in/.gitkeep
 !out/.gitkeep
 !out/restock/.gitkeep
