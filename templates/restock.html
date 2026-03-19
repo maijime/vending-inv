@@ -1,107 +1,62 @@
 {% extends "base.html" %}
+{% block header_title %}Restock{% endblock %}
 
 {% block content %}
-<h2>Restock Management</h2>
-
+<!-- Restock Machine -->
+<div class="card-header">Restock Machine</div>
 <div class="card">
-    <h3>📦 Restock Machine</h3>
-    <p style="color: #7f8c8d; margin-bottom: 1rem;">
-        Enter the NEW inventory levels after restocking. Items will be deducted from home inventory.
-    </p>
-    
     <form method="POST">
         <input type="hidden" name="action" value="restock_machine">
-        
-        <div class="form-group">
-            <label>Restock Date</label>
+        <div class="form-field">
+            <label>Date</label>
             <input type="date" name="date" value="{{ today }}" required>
         </div>
-        
-        <table>
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>Current</th>
-                    <th>Capacity</th>
-                    <th>Home Stock</th>
-                    <th>New Level</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in machine_inventory %}
-                <tr>
-                    <td>{{ item.item_name }}</td>
-                    <td>{{ item.current_level }}</td>
-                    <td>{{ item.capacity }}</td>
-                    <td>
-                        {% set home = home_inventory | selectattr('item_num', 'equalto', item.item_num) | first %}
-                        {{ home.quantity if home else 0 }}
-                    </td>
-                    <td>
-                        <input type="number" name="machine_{{ item.item_num }}" 
-                               min="0" max="{{ item.capacity }}" 
-                               placeholder="{{ item.current_level }}"
-                               style="width: 80px;">
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
-        <button type="submit" class="btn" style="margin-top: 1rem;">Save Machine Restock</button>
+        {% for item in machine_inventory %}
+        <div class="form-field">
+            <div>
+                <div style="font-size:15px;">{{ item.item_name }}</div>
+                <div style="font-size:12px; color:var(--text2);">
+                    Now: {{ item.current_level }}/{{ item.capacity }}
+                    · Home: {% set home = home_inventory | selectattr('item_num', 'equalto', item.item_num) | first %}{{ home.quantity if home else 0 }}
+                </div>
+            </div>
+            <input type="number" name="machine_{{ item.item_num }}"
+                   min="0" max="{{ item.capacity }}" placeholder="{{ item.current_level }}"
+                   style="width:70px;">
+        </div>
+        {% endfor %}
+        <div class="btn-row">
+            <button type="submit" class="btn btn-full">Save Machine Restock</button>
+        </div>
     </form>
 </div>
 
+<!-- Add Home Inventory -->
+<div class="card-header">Add Home Inventory</div>
 <div class="card">
-    <h3>🛒 Add to Home Inventory</h3>
-    <p style="color: #7f8c8d; margin-bottom: 1rem;">
-        Record items purchased during shopping runs. These will be added to your home inventory.
-    </p>
-    
     <form method="POST">
         <input type="hidden" name="action" value="add_home_inventory">
-        
-        <table>
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>Current Home Stock</th>
-                    <th>Add Quantity</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in home_inventory %}
-                <tr>
-                    <td>{{ item.item_name }}</td>
-                    <td>{{ item.quantity }}</td>
-                    <td>
-                        <input type="number" name="home_{{ item.item_num }}" 
-                               min="0" placeholder="0"
-                               style="width: 80px;">
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
-        <button type="submit" class="btn" style="margin-top: 1rem;">Add to Home Inventory</button>
+        {% for item in home_inventory %}
+        <div class="form-field">
+            <div>
+                <div style="font-size:15px;">{{ item.item_name }}</div>
+                <div style="font-size:12px; color:var(--text2);">Have: {{ item.quantity }}</div>
+            </div>
+            <input type="number" name="home_{{ item.item_num }}"
+                   min="0" placeholder="0" style="width:70px;">
+        </div>
+        {% endfor %}
+        <div class="btn-row">
+            <button type="submit" class="btn btn-full btn-secondary">Add to Home Stock</button>
+        </div>
     </form>
 </div>
 
-<div class="card" style="background: #e8f5e9;">
-    <h3>💡 How It Works</h3>
-    <p><strong>Restock Machine:</strong></p>
-    <ul style="margin-left: 1.5rem;">
-        <li>Enter the NEW inventory level after you restock</li>
-        <li>Items are automatically deducted from home inventory</li>
-        <li>Example: Machine has 2 Coke, you add 10 → Enter "12"</li>
-    </ul>
-    
-    <p style="margin-top: 1rem;"><strong>Add Home Inventory:</strong></p>
-    <ul style="margin-left: 1.5rem;">
-        <li>Record items you bought at the store</li>
-        <li>Quantities are ADDED to your current home stock</li>
-        <li>Example: Have 5 Coke at home, bought 20 → Enter "20"</li>
-    </ul>
+<div class="card-header">How It Works</div>
+<div class="card">
+    <div class="card-body" style="font-size:14px; color:var(--text2); line-height:1.5;">
+        <strong style="color:var(--text);">Restock Machine:</strong> Enter NEW levels after restocking. Auto-deducts from home stock.<br><br>
+        <strong style="color:var(--text);">Add Home Stock:</strong> Enter quantities bought. Added to current home totals.
+    </div>
 </div>
 {% endblock %}

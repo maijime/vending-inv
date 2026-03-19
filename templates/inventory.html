@@ -1,92 +1,57 @@
 {% extends "base.html" %}
+{% block header_title %}Inventory{% endblock %}
 
 {% block content %}
-<h2>Inventory Management</h2>
-
 {% if sales_since_restock %}
-<div class="card" style="background: #e3f2fd;">
-    <h3>📊 Sales Since Last Restock ({{ sales_since_restock.start_date }})</h3>
+<div class="card-header">Since Restock · {{ sales_since_restock.start_date }}</div>
+<div class="card">
     <div class="metrics">
         <div class="metric">
             <div class="metric-value">${{ "%.2f"|format(sales_since_restock.total_revenue or 0) }}</div>
-            <div class="metric-label">Total Sales</div>
+            <div class="metric-label">Revenue</div>
         </div>
         <div class="metric">
-            <div class="metric-value">${{ "%.2f"|format(sales_since_restock.total_profit or 0) }}</div>
-            <div class="metric-label">Total Profit</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value">{{ sales_since_restock.total_items or 0 }}</div>
-            <div class="metric-label">Items Sold</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value">{{ "%.1f"|format((sales_since_restock.total_profit or 0) / (sales_since_restock.total_revenue or 1) * 100) }}%</div>
-            <div class="metric-label">Profit Margin</div>
+            <div class="metric-value green">${{ "%.2f"|format(sales_since_restock.total_profit or 0) }}</div>
+            <div class="metric-label">Profit</div>
         </div>
     </div>
 </div>
 {% endif %}
 
+<div class="card-header">Machine Inventory</div>
 <div class="card">
-    <h3>Machine Inventory</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Item</th>
-                <th>Current Level</th>
-                <th>Capacity</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in machine_inventory %}
-            <tr>
-                <td>{{ item.item_name }}</td>
-                <td class="{% if item.current_level < low_stock_threshold %}low-stock{% else %}good-stock{% endif %}">
-                    {{ item.current_level }}/{{ item.capacity }}
-                </td>
-                <td>{{ item.capacity }}</td>
-                <td>
-                    {% if item.current_level < low_stock_threshold %}
-                        ⚠️ Low Stock
-                    {% elif item.current_level == item.capacity %}
-                        ✅ Full
-                    {% else %}
-                        ✓ OK
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% for item in machine_inventory %}
+    <div class="list-row">
+        <div>
+            <div class="list-row-label">{{ item.item_name }}</div>
+            <div style="font-size:12px; color:var(--text2);">#{{ item.item_num }}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span class="list-row-value">{{ item.current_level }}/{{ item.capacity }}</span>
+            {% if item.current_level < low_stock_threshold %}
+                <span class="badge badge-red">Low</span>
+            {% elif item.current_level == item.capacity %}
+                <span class="badge badge-green">Full</span>
+            {% else %}
+                <span class="badge badge-green">OK</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
 </div>
 
+<div class="card-header">Home Inventory</div>
 <div class="card">
-    <h3>Home Inventory</h3>
-    <p style="margin-bottom: 1rem; color: #7f8c8d;">Track your backup inventory at home</p>
-    <table>
-        <thead>
-            <tr>
-                <th>Item</th>
-                <th>Quantity</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in home_inventory %}
-            <tr>
-                <td>{{ item.item_name }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>
-                    <form method="POST" action="/home-inventory/update" style="display: inline-flex; gap: 0.5rem;">
-                        <input type="hidden" name="item_num" value="{{ item.item_num }}">
-                        <input type="number" name="quantity" value="{{ item.quantity }}" min="0" style="width: 80px;">
-                        <button type="submit" class="btn">Update</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% for item in home_inventory %}
+    <div class="list-row">
+        <span class="list-row-label">{{ item.item_name }}</span>
+        <form method="POST" action="/home-inventory/update" style="display:flex; align-items:center; gap:6px;">
+            <input type="hidden" name="item_num" value="{{ item.item_num }}">
+            <input type="number" name="quantity" value="{{ item.quantity }}" min="0"
+                   style="width:60px; text-align:center; font-size:15px; border:1px solid var(--sep); border-radius:8px; padding:6px; background:var(--bg);">
+            <button type="submit" class="btn btn-small btn-secondary">Set</button>
+        </form>
+    </div>
+    {% endfor %}
 </div>
 {% endblock %}

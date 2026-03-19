@@ -1,17 +1,18 @@
 {% extends "base.html" %}
+{% block header_title %}Dashboard{% endblock %}
+{% block header_sub %}<div class="header-sub">{{ yesterday }}</div>{% endblock %}
 
 {% block content %}
-<h2>Dashboard Overview</h2>
-
+<!-- Yesterday's Performance -->
+<div class="card-header">Yesterday's Performance</div>
 <div class="card">
-    <h3>Yesterday's Performance - {{ yesterday }}</h3>
     <div class="metrics">
         <div class="metric">
             <div class="metric-value">${{ "%.2f"|format(yesterday_summary.total_revenue or 0) }}</div>
-            <div class="metric-label">Sales</div>
+            <div class="metric-label">Revenue</div>
         </div>
         <div class="metric">
-            <div class="metric-value">${{ "%.2f"|format(yesterday_summary.total_profit or 0) }}</div>
+            <div class="metric-value green">${{ "%.2f"|format(yesterday_summary.total_profit or 0) }}</div>
             <div class="metric-label">Profit</div>
         </div>
         <div class="metric">
@@ -19,42 +20,113 @@
             <div class="metric-label">Items Sold</div>
         </div>
         <div class="metric">
-            <div class="metric-value">{{ low_stock_count }}</div>
-            <div class="metric-label">Low Stock Items</div>
+            <div class="metric-value {% if low_stock_count > 0 %}red{% endif %}">{{ low_stock_count }}</div>
+            <div class="metric-label">Low Stock</div>
         </div>
     </div>
 </div>
 
+<!-- Revenue Chart -->
+<div class="card-header">Revenue (30 Days)</div>
+<div class="card">
+    <div class="chart-container">
+        <canvas id="revenueChart"></canvas>
+    </div>
+</div>
+
+<!-- Since Last Restock -->
 {% if restock_summary %}
-<div class="card" style="background: #e8f5e9;">
-    <h3>Since Last Restock - {{ restock_summary.start_date }}</h3>
-    <div class="metrics">
-        <div class="metric">
-            <div class="metric-value">${{ "%.2f"|format(restock_summary.total_revenue or 0) }}</div>
-            <div class="metric-label">Total Sales</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value">${{ "%.2f"|format(restock_summary.total_profit or 0) }}</div>
-            <div class="metric-label">Total Profit</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value">{{ restock_summary.total_items or 0 }}</div>
-            <div class="metric-label">Items Sold</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value">{{ "%.1f"|format((restock_summary.total_profit or 0) / (restock_summary.total_revenue or 1) * 100) }}%</div>
-            <div class="metric-label">Profit Margin</div>
-        </div>
+<div class="card-header">Since Last Restock · {{ restock_summary.start_date }}</div>
+<div class="card">
+    <div class="list-row">
+        <span class="list-row-label">Revenue</span>
+        <span class="list-row-value">${{ "%.2f"|format(restock_summary.total_revenue or 0) }}</span>
+    </div>
+    <div class="list-row">
+        <span class="list-row-label">Profit</span>
+        <span class="list-row-value green">${{ "%.2f"|format(restock_summary.total_profit or 0) }}</span>
+    </div>
+    <div class="list-row">
+        <span class="list-row-label">Items Sold</span>
+        <span class="list-row-value">{{ restock_summary.total_items or 0 }}</span>
+    </div>
+    <div class="list-row">
+        <span class="list-row-label">Margin</span>
+        <span class="list-row-value green">{{ "%.1f"|format((restock_summary.total_profit or 0) / (restock_summary.total_revenue or 1) * 100) }}%</span>
     </div>
 </div>
 {% endif %}
 
+<!-- Quick Actions -->
+<div class="card-header">Quick Actions</div>
 <div class="card">
-    <h3>Quick Actions</h3>
-    <a href="/check-today" class="btn" style="background: #ff9800;">📊 Check Today's Sales (Live)</a>
-    <a href="/inventory" class="btn">📦 View Inventory</a>
-    <a href="/restock" class="btn">🔄 Restock Machine</a>
-    <a href="/sales" class="btn">📊 Sales History</a>
-    <a href="/items" class="btn">🏷️ Manage Items</a>
+    <a href="/check-today" class="list-row" style="text-decoration:none; color:var(--text);">
+        <span class="list-row-label">📊 Check Today's Sales (Live)</span>
+        <span class="list-row-value blue">→</span>
+    </a>
+    <a href="/restock" class="list-row" style="text-decoration:none; color:var(--text);">
+        <span class="list-row-label">🔄 Restock Machine</span>
+        <span class="list-row-value blue">→</span>
+    </a>
+    <a href="/inventory" class="list-row" style="text-decoration:none; color:var(--text);">
+        <span class="list-row-label">📦 View Inventory</span>
+        <span class="list-row-value blue">→</span>
+    </a>
 </div>
+
+{% if week_comparison %}
+<div class="card-header">This Week vs Last Week</div>
+<div class="card">
+    <div class="list-row">
+        <span class="list-row-label">This Week</span>
+        <span class="list-row-value">${{ "%.2f"|format(week_comparison.this_week) }}</span>
+    </div>
+    <div class="list-row">
+        <span class="list-row-label">Last Week</span>
+        <span class="list-row-value">${{ "%.2f"|format(week_comparison.last_week) }}</span>
+    </div>
+    <div class="list-row">
+        <span class="list-row-label">Change</span>
+        {% set change = week_comparison.this_week - week_comparison.last_week %}
+        <span class="list-row-value {% if change >= 0 %}green{% else %}red{% endif %}">
+            {{ "+" if change >= 0 }}${{ "%.2f"|format(change) }}
+        </span>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+fetch('/api/sales-chart?days=30')
+    .then(r => r.json())
+    .then(data => {
+        if (!data.length) return;
+        new Chart(document.getElementById('revenueChart'), {
+            type: 'bar',
+            data: {
+                labels: data.map(d => {
+                    const dt = new Date(d.date + 'T12:00:00');
+                    return dt.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+                }),
+                datasets: [{
+                    label: 'Revenue',
+                    data: data.map(d => d.revenue),
+                    backgroundColor: 'rgba(0,122,255,0.6)',
+                    borderRadius: 4,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 7 } },
+                    y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 }, callback: v => '$' + v } }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

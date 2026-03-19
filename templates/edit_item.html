@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block header_title %}Edit Item{% endblock %}
+
+{% block content %}
+<div class="card-header">Edit {{ item.item_name }}</div>
+<div class="card">
+    <form method="POST" action="/items/update/{{ item.item_num }}">
+        <div class="form-field">
+            <label>Item #</label>
+            <span class="list-row-value">{{ item.item_num }}</span>
+        </div>
+        <div class="form-field">
+            <label>Name</label>
+            <input type="text" name="item_name" value="{{ item.item_name }}" required style="width:160px;">
+        </div>
+        <div class="form-field">
+            <label>Capacity</label>
+            <input type="number" name="capacity" value="{{ item.capacity }}" required min="1">
+        </div>
+        <div class="form-field">
+            <label>Unit Cost</label>
+            <input type="number" name="unit_cost" value="{{ item.unit_cost }}" required step="0.01" min="0">
+        </div>
+        <div class="btn-row">
+            <a href="/items" class="btn btn-secondary" style="flex:1;">Cancel</a>
+            <button type="submit" class="btn" style="flex:1;">Save</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,69 +1,49 @@
 {% extends "base.html" %}
+{% block header_title %}Items{% endblock %}
 
 {% block content %}
-<h2>Items Management</h2>
-
+<div class="card-header">Add New Item</div>
 <div class="card">
-    <h3>Add New Item</h3>
-    <form method="POST" action="/items/add" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-        <div class="form-group">
-            <label>Item Number</label>
+    <form method="POST" action="/items/add">
+        <div class="form-field">
+            <label>Item #</label>
             <input type="text" name="item_num" required placeholder="0111">
         </div>
-        <div class="form-group">
-            <label>Item Name</label>
-            <input type="text" name="item_name" required placeholder="Coca Cola">
+        <div class="form-field">
+            <label>Name</label>
+            <input type="text" name="item_name" required placeholder="Coca Cola" style="width:160px;">
         </div>
-        <div class="form-group">
+        <div class="form-field">
             <label>Capacity</label>
             <input type="number" name="capacity" required min="1" placeholder="15">
         </div>
-        <div class="form-group">
-            <label>Unit Cost ($)</label>
+        <div class="form-field">
+            <label>Unit Cost</label>
             <input type="number" name="unit_cost" required step="0.01" min="0" placeholder="0.33">
         </div>
-        <div class="form-group" style="display: flex; align-items: end;">
-            <button type="submit" class="btn">Add Item</button>
+        <div class="btn-row">
+            <button type="submit" class="btn btn-full">Add Item</button>
         </div>
     </form>
 </div>
 
+<div class="card-header">Current Items ({{ items | length }})</div>
 <div class="card">
-    <h3>Current Items</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Item #</th>
-                <th>Name</th>
-                <th>Capacity</th>
-                <th>Unit Cost</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in items %}
-            <tr>
-                <td>{{ item.item_num }}</td>
-                <td>
-                    <form method="POST" action="/items/update/{{ item.item_num }}" style="display: inline;">
-                        <input type="text" name="item_name" value="{{ item.item_name }}" style="width: 150px;">
-                </td>
-                <td>
-                    <input type="number" name="capacity" value="{{ item.capacity }}" min="1" style="width: 80px;">
-                </td>
-                <td>
-                    <input type="number" name="unit_cost" value="{{ item.unit_cost }}" step="0.01" min="0" style="width: 80px;">
-                </td>
-                <td>
-                    <button type="submit" class="btn">Save</button>
-                    </form>
-                    <form method="POST" action="/items/delete/{{ item.item_num }}" style="display: inline;" onsubmit="return confirm('Delete this item?');">
-                        <button type="submit" class="btn btn-danger">Delete</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% for item in items %}
+    <div class="list-row" style="flex-wrap:wrap; gap:8px;">
+        <div style="flex:1; min-width:120px;">
+            <div class="list-row-label">{{ item.item_name }}</div>
+            <div style="font-size:12px; color:var(--text2);">#{{ item.item_num }} · Cap: {{ item.capacity }} · ${{ "%.2f"|format(item.unit_cost) }}</div>
+        </div>
+        <div style="display:flex; gap:4px;">
+            <form method="POST" action="/items/edit/{{ item.item_num }}">
+                <button type="submit" class="btn btn-small btn-secondary">Edit</button>
+            </form>
+            <form method="POST" action="/items/delete/{{ item.item_num }}" onsubmit="return confirm('Delete {{ item.item_name }}?');">
+                <button type="submit" class="btn btn-small btn-danger">Delete</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
 </div>
 {% endblock %}

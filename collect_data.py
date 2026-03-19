@@ -5,6 +5,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+import shutil
 from datetime import datetime, timedelta
 import time
 import os
@@ -23,7 +25,8 @@ def get_vending_data(date_str: str):
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     
-    driver = webdriver.Chrome(options=chrome_options)
+    chromedriver_path = shutil.which('chromedriver') or '/usr/bin/chromedriver'
+    driver = webdriver.Chrome(service=Service(chromedriver_path), options=chrome_options)
     
     try:
         # Login

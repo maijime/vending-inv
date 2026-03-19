@@ -1,49 +1,76 @@
 {% extends "base.html" %}
+{% block header_title %}Settings{% endblock %}
 
 {% block content %}
-<h2>Settings</h2>
-
+<div class="card-header">Alerts</div>
 <div class="card">
-    <h3>Notification Settings</h3>
     <form method="POST">
-        <div class="form-group">
+        <div class="form-field">
             <label>Low Stock Threshold</label>
             <input type="number" name="low_stock_threshold" value="{{ low_stock_threshold }}" min="1" max="20">
-            <p style="color: #7f8c8d; font-size: 0.9rem; margin-top: 0.5rem;">
-                Alert when inventory falls below this number (shown in email reports)
-            </p>
         </div>
-        
-        <button type="submit" class="btn">Save Settings</button>
+        <div class="form-field">
+            <label>Last Restock Date</label>
+            <input type="date" name="last_restock_date" value="{{ last_restock_date or '' }}">
+        </div>
+        <div class="btn-row">
+            <button type="submit" class="btn btn-full">Save Settings</button>
+        </div>
     </form>
 </div>
 
+<div class="card-header">Email Reports</div>
 <div class="card">
-    <h3>📧 Email Alerts</h3>
-    <p style="color: #7f8c8d;">
-        <strong>Status:</strong> {% if gmail_configured %}<span style="color: #27ae60;">✓ Configured</span>{% else %}<span style="color: #e74c3c;">⚠️ Not configured</span>{% endif %}<br>
-        <strong>Recipient:</strong> your_email@gmail.com<br>
-        <strong>Schedule:</strong> Daily at 4:15 PM (if sales > 0)<br>
-        <strong>Includes:</strong> Sales summary, inventory levels, low stock alerts<br>
-    </p>
-    
+    <div class="list-row">
+        <span class="list-row-label">Status</span>
+        {% if gmail_configured %}
+            <span class="badge badge-green">Configured</span>
+        {% else %}
+            <span class="badge badge-red">Not Set Up</span>
+        {% endif %}
+    </div>
+    <div class="list-row">
+        <span class="list-row-label">Schedule</span>
+        <span class="list-row-value">Daily 4:15 PM</span>
+    </div>
+    <div class="list-row">
+        <span class="list-row-label">Condition</span>
+        <span class="list-row-value">Only if sales > 0</span>
+    </div>
     {% if not gmail_configured %}
-    <div style="background: #fff3cd; padding: 1rem; border-radius: 5px; margin-top: 1rem;">
-        <strong>Setup Required:</strong><br>
-        1. Go to <a href="https://myaccount.google.com/security" target="_blank">Google Account Security</a><br>
-        2. Enable 2-Step Verification<br>
-        3. Go to <a href="https://myaccount.google.com/apppasswords" target="_blank">App Passwords</a><br>
-        4. Create password for "Mail"<br>
-        5. Edit .env file: <code>GMAIL_APP_PASSWORD=your_16_char_password</code><br>
-        6. Restart dashboard
+    <div class="card-body">
+        <div class="banner banner-warn" style="margin:0;">
+            Set up Gmail App Password in .env file. See EMAIL_SETUP.md for instructions.
+        </div>
     </div>
     {% endif %}
 </div>
 
+<div class="card-header">System</div>
 <div class="card">
-    <h3>System Information</h3>
-    <p><strong>Database:</strong> vending.db</p>
-    <p><strong>Version:</strong> 2.0</p>
-    <p><strong>Email:</strong> {% if gmail_configured %}✓ Ready{% else %}⚠️ Setup required{% endif %}</p>
+    <div class="list-row">
+        <span class="list-row-label">Version</span>
+        <span class="list-row-value">2.1</span>
+    </div>
+    <div class="list-row">
+        <span class="list-row-label">Database</span>
+        <span class="list-row-value">vending.db</span>
+    </div>
+    <div class="list-row">
+        <span class="list-row-label">Items</span>
+        <span class="list-row-value">{{ item_count }}</span>
+    </div>
+    <a href="/health" class="list-row" style="text-decoration:none; color:var(--text);">
+        <span class="list-row-label">Health Check</span>
+        <span class="list-row-value blue">→</span>
+    </a>
+</div>
+
+<div class="card-header">Data</div>
+<div class="card">
+    <a href="/api/export-csv" class="list-row" style="text-decoration:none; color:var(--text);">
+        <span class="list-row-label">⬇ Export All Sales (CSV)</span>
+        <span class="list-row-value blue">→</span>
+    </a>
 </div>
 {% endblock %}
