@@ -213,14 +213,61 @@ def set_setting(key: str, value: str):
     conn.commit()
     conn.close()
 
+def seed_default_items():
+    """Seed items table with default vending machine items (no CSV needed)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT COUNT(*) FROM items')
+    if cursor.fetchone()[0] > 0:
+        conn.close()
+        return False
+
+    items = [
+        ("0111", "Gold Fish", 7, 0.55),
+        ("0113", "Kettle", 7, 0.50),
+        ("0115", "Kettle", 7, 0.50),
+        ("0117", "Pretzels", 7, 0.40),
+        ("0121", "Lays", 7, 0.40),
+        ("0123", "Lays", 7, 0.40),
+        ("0125", "Lays", 7, 0.40),
+        ("0127", "Choc Chips", 7, 0.30),
+        ("0130", "Granola Bar", 14, 0.20),
+        ("0131", "Slim Jim", 14, 0.20),
+        ("0132", "Cheese Crackers", 14, 0.50),
+        ("0133", "Wafer", 14, 0.30),
+        ("0134", "Kinder", 14, 0.90),
+        ("0135", "Trail Mix", 14, 0.40),
+        ("0136", "Peanuts", 14, 0.20),
+        ("0137", "M&M's", 14, 1.10),
+        ("0140", "Coca Cola", 15, 0.33),
+        ("0141", "Sprite", 15, 0.33),
+        ("0142", "Coca Cola", 15, 0.33),
+        ("0143", "Jupiña", 15, 0.45),
+        ("0144", "Dr Pepper", 15, 0.45),
+        ("0145", "Monster", 15, 1.75),
+        ("0146", "Iron Beer", 15, 0.55),
+    ]
+
+    cursor.executemany(
+        'INSERT INTO items (item_num, item_name, capacity, unit_cost) VALUES (?, ?, ?, ?)',
+        items
+    )
+    conn.commit()
+    conn.close()
+    return True
+
+
 if __name__ == '__main__':
     print("Initializing database...")
     init_database()
     print("Database initialized successfully!")
-    
-    # Migrate items from CSV if it exists
+
+    # Try CSV first, fall back to built-in defaults
     try:
         migrate_items_from_csv()
         print("Items migrated from CSV!")
     except FileNotFoundError:
-        print("No items.csv found, skipping migration.")
+        if seed_default_items():
+            print("Items seeded from defaults!")
+        else:
+            print("Items already exist, skipping.")
