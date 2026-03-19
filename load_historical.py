@@ -35,7 +35,12 @@ def parse_items_from_page(driver, db_items, daily_data):
         parts = items_text.split(", ")
         for part in parts:
             if "Two-Tier Pricing" in part:
-                fee = float(part.split("(")[1].strip(")$"))
+                fee_info = part.split("(")[1].strip(")")
+                if " * $" in fee_info:
+                    fee_count, fee_amount = fee_info.split(" * $")
+                    fee = int(fee_count) * float(fee_amount)
+                else:
+                    fee = float(fee_info.strip("$"))
                 for prev in reversed(parts):
                     if "Two-Tier Pricing" not in prev:
                         item_code = prev.split("(")[0]
