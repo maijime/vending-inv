@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block header_title %}Dashboard{% endblock %}
-{% block header_sub %}<div class="header-sub">{{ yesterday }}</div>{% endblock %}
+{% block header_title %}💪 Dashboard{% endblock %}
+{% block header_sub %}<div class="header-sub">{{ greeting }} · {{ yesterday }}</div>{% endblock %}
 
 {% block content %}
 <!-- Yesterday's Performance -->
@@ -92,6 +92,12 @@
             {{ "+" if change >= 0 }}${{ "%.2f"|format(change) }}
         </span>
     </div>
+    {% if best_day %}
+    <div class="list-row">
+        <span class="list-row-label">💡 Best Day</span>
+        <span class="list-row-value">{{ best_day.day_name }}s · avg ${{ best_day.avg_revenue }}</span>
+    </div>
+    {% endif %}
 </div>
 {% endif %}
 {% endblock %}

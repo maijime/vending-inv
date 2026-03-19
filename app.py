@@ -38,13 +38,35 @@ def index():
         'last_week': last_week.get('total_revenue') or 0,
     }
 
+    # Best day of week
+    conn = db.get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT CASE CAST(strftime('%w', date) AS INTEGER)
+            WHEN 0 THEN 'Sunday' WHEN 1 THEN 'Monday' WHEN 2 THEN 'Tuesday'
+            WHEN 3 THEN 'Wednesday' WHEN 4 THEN 'Thursday' WHEN 5 THEN 'Friday'
+            WHEN 6 THEN 'Saturday' END as day_name,
+            ROUND(AVG(daily_total), 2) as avg_revenue
+        FROM (SELECT date, SUM(revenue) as daily_total FROM daily_sales GROUP BY date)
+        GROUP BY strftime('%w', date) ORDER BY avg_revenue DESC LIMIT 1
+    ''')
+    best_day_row = cursor.fetchone()
+    best_day = dict(best_day_row) if best_day_row else None
+    conn.close()
+
+    # Greeting based on time
+    hour = now.hour
+    greeting = "Good morning" if hour < 12 else "Good afternoon" if hour < 17 else "Good evening"
+
     return render_template('index.html',
                            today=today, yesterday=yesterday,
                            yesterday_summary=yesterday_summary,
                            restock_summary=restock_summary,
                            low_stock_count=low_stock_count,
                            inventory_count=len(inventory),
-                           week_comparison=week_comparison)
+                           week_comparison=week_comparison,
+                           best_day=best_day,
+                           greeting=greeting)
 
 
 @app.route('/inventory')

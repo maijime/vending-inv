@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Fast historical data loader using Seedlive's Entire Range report.
-One login, one report, all transactions parsed at once."""
+One login, one report, paginates through all pages."""
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select, WebDriverWait
@@ -14,6 +14,45 @@ from dotenv import load_dotenv
 import database as db
 
 load_dotenv()
+
+
+def parse_items_from_page(driver, db_items, daily_data):
+    """Parse all transaction rows on the current page into daily_data."""
+    cells = driver.find_elements(By.CSS_SELECTOR, "td.colId_12")
+    count = 0
+    for cell in cells:
+        row = cell.find_element(By.XPATH, "..")
+        try:
+            date_text = row.find_element(By.CSS_SELECTOR, "td.colId_6").text.strip()
+            date_str = datetime.strptime(date_text, "%m/%d/%Y %I:%M %p").strftime("%Y-%m-%d")
+        except:
+            continue
+        try:
+            items_text = cell.find_element(By.TAG_NAME, "span").text
+        except:
+            continue
+
+        parts = items_text.split(", ")
+        for part in parts:
+            if "Two-Tier Pricing" in part:
+                fee = float(part.split("(")[1].strip(")$"))
+                for prev in reversed(parts):
+                    if "Two-Tier Pricing" not in prev:
+                        item_code = prev.split("(")[0]
+                        if item_code in db_items:
+                            daily_data[date_str][item_code]['total_amount'] += fee
+                        break
+            else:
+                try:
+                    item_code = part.split("(")[0]
+                    price = float(part.split("(")[1].strip(")$"))
+                    if item_code in db_items:
+                        daily_data[date_str][item_code]['sold'] += 1
+                        daily_data[date_str][item_code]['total_amount'] += price
+                except:
+                    continue
+        count += 1
+    return count
 
 
 def load_historical_data(start_date_str: str, end_date_str: str):
@@ -49,11 +88,9 @@ def load_historical_data(start_date_str: str, end_date_str: str):
         driver.find_element(By.XPATH, "//a[@title='Build and run custom reports']").click()
         time.sleep(3)
 
-        # Set Entire Range mode
+        # Set Entire Range mode + dates
         Select(driver.find_element(By.ID, "rangeType")).select_by_value("ALL")
         time.sleep(1)
-
-        # Set date range
         Select(driver.find_element(By.ID, "beginYear")).select_by_value(str(start.year))
         Select(driver.find_element(By.ID, "beginMonth")).select_by_value(start.strftime("%B"))
         Select(driver.find_element(By.ID, "beginDay")).select_by_value(str(start.day))
@@ -63,7 +100,6 @@ def load_historical_data(start_date_str: str, end_date_str: str):
         Select(driver.find_element(By.ID, "endDay")).select_by_value(str(end.day))
         Select(driver.find_element(By.ID, "endTime")).select_by_value("23:00")
 
-        # Dismiss any date alert
         try:
             driver.switch_to.alert.accept()
         except:
@@ -73,95 +109,71 @@ def load_historical_data(start_date_str: str, end_date_str: str):
         print("Running report...", flush=True)
         driver.find_element(By.CSS_SELECTOR, "input[type='submit'][value='Run Report']").click()
 
-        # Wait for summary page
-        for i in range(30):
+        # Wait for summary
+        for _ in range(30):
             time.sleep(2)
             try:
                 driver.switch_to.alert.accept()
                 continue
             except:
                 pass
-            links = [a for a in driver.find_elements(By.TAG_NAME, "a") if "$" in a.text]
-            if links:
+            if [a for a in driver.find_elements(By.TAG_NAME, "a") if "$" in a.text]:
                 break
-        else:
-            print("ERROR: Report didn't load in 60s")
-            return
 
-        # Click the total to get detail page
+        # Click total for detail
+        links = [a for a in driver.find_elements(By.TAG_NAME, "a") if "$" in a.text]
         total_link = max(links, key=lambda a: float(a.text.replace("$", "").replace(",", "")))
-        print(f"Total: {total_link.text} — clicking for detail...", flush=True)
+        print(f"Total: {total_link.text} — loading detail...", flush=True)
         total_link.click()
 
         # Wait for detail page
-        for i in range(30):
+        for _ in range(30):
             time.sleep(2)
             try:
                 driver.switch_to.alert.accept()
                 continue
             except:
                 pass
-            items = driver.find_elements(By.CSS_SELECTOR, "td.colId_12")
-            if items:
+            if driver.find_elements(By.CSS_SELECTOR, "td.colId_12"):
                 break
-        else:
-            print("ERROR: Detail page didn't load in 60s")
-            return
 
-        # Get items from DB
+        # Get DB items
         conn = db.get_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT item_num, item_name, capacity, unit_cost FROM items WHERE active = 1')
         db_items = {row['item_num']: dict(row) for row in cursor.fetchall()}
         conn.close()
 
-        # Parse all transaction rows
-        print("Parsing transactions...", flush=True)
-        rows = driver.find_elements(By.CSS_SELECTOR, "td.colId_12")
-        # daily_data[date][item_num] = {sold, total_amount}
+        # Check total pages
         daily_data = defaultdict(lambda: defaultdict(lambda: {'sold': 0, 'total_amount': 0.0}))
-        parsed = 0
+        total_parsed = 0
 
-        for cell in rows:
-            row = cell.find_element(By.XPATH, "..")
-            # Get date from colId_6
-            try:
-                date_cell = row.find_element(By.CSS_SELECTOR, "td.colId_6")
-                date_text = date_cell.text.strip()  # "03/18/2026 12:09 PM"
-                date_str = datetime.strptime(date_text, "%m/%d/%Y %I:%M %p").strftime("%Y-%m-%d")
-            except:
-                continue
+        nav = driver.find_elements(By.CSS_SELECTOR, "table.page-navigation")
+        total_pages = int(nav[0].get_attribute("data-total-pages")) if nav else 1
+        print(f"Found {total_pages} pages of transactions", flush=True)
 
-            # Get items from colId_12 span
-            try:
-                items_span = cell.find_element(By.TAG_NAME, "span")
-                items_text = items_span.text  # "0142($1.75), Two-Tier Pricing($0.10)"
-            except:
-                continue
+        # Parse page 1
+        count = parse_items_from_page(driver, db_items, daily_data)
+        total_parsed += count
+        print(f"  Page 1: {count} transactions", flush=True)
 
-            parts = items_text.split(", ")
-            for part in parts:
-                if "Two-Tier Pricing" in part:
-                    # Add fee to the preceding item
-                    fee_str = part.split("(")[1].strip(")$")
-                    fee = float(fee_str)
-                    # Find the last real item in this transaction
-                    for prev in reversed(parts):
-                        if "Two-Tier Pricing" not in prev:
-                            item_code = prev.split("(")[0]
-                            if item_code in db_items:
-                                daily_data[date_str][item_code]['total_amount'] += fee
-                            break
-                else:
-                    item_code = part.split("(")[0]
-                    price_str = part.split("(")[1].strip(")$")
-                    price = float(price_str)
-                    if item_code in db_items:
-                        daily_data[date_str][item_code]['sold'] += 1
-                        daily_data[date_str][item_code]['total_amount'] += price
-            parsed += 1
+        # Navigate remaining pages
+        for page in range(2, total_pages + 1):
+            # Click "Next" button
+            next_btn = driver.find_element(By.CSS_SELECTOR, "input.goto-report-page[title='Next']")
+            next_btn.click()
+            time.sleep(5)
 
-        print(f"Parsed {parsed} transactions across {len(daily_data)} days", flush=True)
+            # Wait for new data
+            WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "td.colId_12"))
+            )
+
+            count = parse_items_from_page(driver, db_items, daily_data)
+            total_parsed += count
+            print(f"  Page {page}: {count} transactions", flush=True)
+
+        print(f"\nParsed {total_parsed} transactions across {len(daily_data)} days", flush=True)
 
         # Save to database
         saved = 0
@@ -172,17 +184,12 @@ def load_historical_data(start_date_str: str, end_date_str: str):
                 sold = data['sold']
                 total = data['total_amount']
                 sales_data.append({
-                    'item_num': item_num,
-                    'item_name': item['item_name'],
-                    'capacity': item['capacity'],
-                    'inventory': item['capacity'] - sold,
-                    'sold': sold,
-                    'price': round(total / sold, 2) if sold > 0 else 0,
-                    'sales': round(total, 2),
-                    'cost': item['unit_cost'],
+                    'item_num': item_num, 'item_name': item['item_name'],
+                    'capacity': item['capacity'], 'inventory': item['capacity'] - sold,
+                    'sold': sold, 'price': round(total / sold, 2) if sold > 0 else 0,
+                    'sales': round(total, 2), 'cost': item['unit_cost'],
                     'profit': round(total - (item['unit_cost'] * sold), 2)
                 })
-
             # Add zero-sold items
             for item_num, item in db_items.items():
                 if item_num not in daily_data[date_str]:
@@ -192,7 +199,6 @@ def load_historical_data(start_date_str: str, end_date_str: str):
                         'sold': 0, 'price': 0, 'sales': 0,
                         'cost': item['unit_cost'], 'profit': 0
                     })
-
             db.save_daily_data(date_str, sales_data)
             total_rev = sum(d['sales'] for d in sales_data)
             print(f"  ✓ {date_str}: ${total_rev:.2f}", flush=True)
