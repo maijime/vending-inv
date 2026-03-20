@@ -177,25 +177,27 @@ def restock():
         c = conn.cursor()
 
         if action == 'restock_machine':
-            # Track how much each product was restocked
+            last_restock = db.get_setting('last_restock_date') or '2000-01-01'
             product_deductions = {}
             for key, value in request.form.items():
                 if key.startswith('slot_') and value:
                     item_num = key.replace('slot_', '')
                     new_level = int(value)
-                    # Get current level and product_id
+                    # Calculate current level from sales since last restock
                     c.execute('''SELECT i.capacity, i.product_id,
-                                        COALESCE(inv.current_level, i.capacity) as current_level
-                                 FROM items i
-                                 LEFT JOIN inventory_snapshots inv ON i.item_num = inv.item_num
-                                     AND inv.date = (SELECT MAX(date) FROM inventory_snapshots WHERE item_num = i.item_num)
-                                 WHERE i.item_num = ?''', (item_num,))
+                                        i.capacity - COALESCE(
+                                            (SELECT SUM(ds.quantity_sold) FROM daily_sales ds
+                                             WHERE ds.item_num = i.item_num AND ds.date >= ?), 0
+                                        ) as current_level
+                                 FROM items i WHERE i.item_num = ?''', (last_restock, item_num))
                     row = c.fetchone()
-                    if row and new_level > row['current_level']:
-                        added = new_level - row['current_level']
-                        pid = row['product_id']
-                        if pid:
-                            product_deductions[pid] = product_deductions.get(pid, 0) + added
+                    if row:
+                        current = max(0, row['current_level'])
+                        if new_level > current:
+                            added = new_level - current
+                            pid = row['product_id']
+                            if pid:
+                                product_deductions[pid] = product_deductions.get(pid, 0) + added
                         c.execute('INSERT OR REPLACE INTO inventory_snapshots (date, item_num, current_level, capacity) VALUES (?, ?, ?, ?)',
                                   (date, item_num, new_level, row['capacity']))
 
@@ -203,7 +205,8 @@ def restock():
             for pid, qty in product_deductions.items():
                 c.execute('UPDATE products SET home_qty = MAX(home_qty - ?, 0) WHERE id = ?', (qty, pid))
 
-            db.set_setting('last_restock_date', date)
+            # Set restock date on same connection
+            c.execute('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ('last_restock_date', date))
 
         conn.commit()
         conn.close()
@@ -286,11 +289,17 @@ def edit_item(item_num):
 def update_item(item_num):
     conn = db.get_connection()
     c = conn.cursor()
-    c.execute('UPDATE items SET item_name = ?, capacity = ?, unit_cost = ?, product_id = ? WHERE item_num = ?',
-              (request.form['item_name'], int(request.form['capacity']),
-               float(request.form['unit_cost']),
-               int(request.form['product_id']) if request.form.get('product_id') else None,
-               item_num))
+    pid = int(request.form['product_id']) if request.form.get('product_id') else None
+    capacity = int(request.form['capacity'])
+    # Sync item_name and unit_cost from product
+    if pid:
+        c.execute('SELECT name, unit_cost FROM products WHERE id = ?', (pid,))
+        p = c.fetchone()
+        c.execute('UPDATE items SET item_name = ?, capacity = ?, unit_cost = ?, product_id = ? WHERE item_num = ?',
+                  (p['name'], capacity, p['unit_cost'], pid, item_num))
+    else:
+        c.execute('UPDATE items SET capacity = ?, product_id = NULL WHERE item_num = ?',
+                  (capacity, item_num))
     conn.commit()
     conn.close()
     return redirect(url_for('inventory'))

@@ -2,36 +2,24 @@
 {% block header_title %}✏️ Edit Slot{% endblock %}
 
 {% block content %}
-<div class="card-header">Edit Slot #{{ item.item_num }}</div>
+<div class="card-header">Slot #{{ item.item_num }}</div>
 <div class="card">
     <form method="POST" action="/items/update/{{ item.item_num }}">
         <div class="form-field">
-            <label>Slot #</label>
-            <span class="list-row-value">{{ item.item_num }}</span>
-        </div>
-        <div class="form-field">
-            <label>Label</label>
-            <input type="text" name="item_name" value="{{ item.item_name }}" required style="width:140px;">
-        </div>
-        <div class="form-field">
-            <label>Capacity</label>
-            <input type="number" name="capacity" value="{{ item.capacity }}" required min="1">
-        </div>
-        <div class="form-field">
-            <label>Unit Cost</label>
-            <input type="number" name="unit_cost" value="{{ item.unit_cost }}" required step="0.01" min="0">
-        </div>
-        <div class="form-field">
             <label>Product</label>
-            <select name="product_id" style="width:140px;">
+            <select name="product_id" style="width:160px;">
                 <option value="">— None —</option>
                 {% for p in products %}
                 <option value="{{ p.id }}" {% if p.id == item.product_id %}selected{% endif %}>{{ p.name }}</option>
                 {% endfor %}
             </select>
         </div>
+        <div class="form-field">
+            <label>Capacity</label>
+            <input type="number" name="capacity" value="{{ item.capacity }}" required min="1" style="width:60px;">
+        </div>
         <div class="btn-row">
-            <a href="/items" class="btn btn-secondary" style="flex:1;">Cancel</a>
+            <a href="/inventory" class="btn btn-secondary" style="flex:1;">Cancel</a>
             <button type="submit" class="btn" style="flex:1;">Save</button>
         </div>
     </form>
