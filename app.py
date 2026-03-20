@@ -210,15 +210,17 @@ def restock():
         return redirect(url_for('restock'))
 
     products = get_products_with_slots()
-    # Group by category for display
-    categories = {}
+    # Flat list of slots sorted by item_num for physical machine order
+    slots = []
+    product_stock = {p['id']: p['home_qty'] for p in products.values()}
     for p in products.values():
-        cat = p['category']
-        if cat not in categories:
-            categories[cat] = []
-        categories[cat].append(p)
+        for s in p['slots']:
+            s['product_name'] = p['name']
+            s['home_qty'] = p['home_qty']
+            slots.append(s)
+    slots.sort(key=lambda s: s['item_num'])
 
-    return render_template('restock.html', categories=categories, products=products,
+    return render_template('restock.html', slots=slots,
                            today=datetime.now().strftime('%Y-%m-%d'))
 
 
