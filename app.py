@@ -138,22 +138,25 @@ def reset_password():
 
 def get_products_with_slots():
     """Get products grouped with their slot assignments.
-    Current level = capacity - total sold since last restock."""
+    Current level = restock level - total sold since last restock.
+    Falls back to capacity if no restock snapshot exists."""
     conn = db.get_connection()
     c = conn.cursor()
     last_restock = db.get_setting('last_restock_date') or '2000-01-01'
     c.execute('''
         SELECT p.id, p.name, p.unit_cost, p.category, p.home_qty,
                i.item_num, i.capacity,
-               i.capacity - COALESCE(
+               COALESCE(snap.current_level, i.capacity) as restock_level,
+               COALESCE(
                    (SELECT SUM(ds.quantity_sold) FROM daily_sales ds
-                    WHERE ds.item_num = i.item_num AND ds.date >= ?), 0
-               ) as current_level
+                    WHERE ds.item_num = i.item_num AND ds.date > ?), 0
+               ) as sold_since
         FROM products p
         JOIN items i ON i.product_id = p.id AND i.active = 1
+        LEFT JOIN inventory_snapshots snap ON snap.item_num = i.item_num AND snap.date = ?
         WHERE p.active = 1
         ORDER BY p.category, p.name, i.item_num
-    ''', (last_restock,))
+    ''', (last_restock, last_restock))
     rows = c.fetchall()
     conn.close()
 
@@ -165,10 +168,12 @@ def get_products_with_slots():
                 'id': pid, 'name': row['name'], 'unit_cost': row['unit_cost'],
                 'category': row['category'], 'home_qty': row['home_qty'], 'slots': []
             }
+        level = max(0, row['restock_level'] - row['sold_since'])
+        cap = row['capacity']
         products[pid]['slots'].append({
-            'item_num': row['item_num'], 'capacity': row['capacity'],
-            'current_level': max(0, row['current_level']),
-            'need': max(0, row['capacity'] - row['current_level'])
+            'item_num': row['item_num'], 'capacity': cap,
+            'current_level': min(level, cap),
+            'need': max(0, cap - level)
         })
     return products
 
@@ -342,16 +347,18 @@ def restock():
                 if key.startswith('slot_') and value:
                     item_num = key.replace('slot_', '')
                     new_level = int(value)
-                    # Calculate current level from sales since last restock
                     c.execute('''SELECT i.capacity, i.product_id,
-                                        i.capacity - COALESCE(
+                                        COALESCE(snap.current_level, i.capacity) as restock_level,
+                                        COALESCE(
                                             (SELECT SUM(ds.quantity_sold) FROM daily_sales ds
-                                             WHERE ds.item_num = i.item_num AND ds.date >= ?), 0
-                                        ) as current_level
-                                 FROM items i WHERE i.item_num = ?''', (last_restock, item_num))
+                                             WHERE ds.item_num = i.item_num AND ds.date > ?), 0
+                                        ) as sold_since
+                                 FROM items i
+                                 LEFT JOIN inventory_snapshots snap ON snap.item_num = i.item_num AND snap.date = ?
+                                 WHERE i.item_num = ?''', (last_restock, last_restock, item_num))
                     row = c.fetchone()
                     if row:
-                        current = max(0, row['current_level'])
+                        current = max(0, row['restock_level'] - row['sold_since'])
                         if new_level > current:
                             added = new_level - current
                             pid = row['product_id']

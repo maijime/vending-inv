@@ -60,6 +60,13 @@ def init_database():
         UNIQUE(date, item_num)
     )''')
 
+    c.execute('''CREATE TABLE IF NOT EXISTS restock_levels (
+        item_num TEXT PRIMARY KEY,
+        level INTEGER NOT NULL,
+        restock_date DATE NOT NULL,
+        FOREIGN KEY (item_num) REFERENCES items(item_num)
+    )''')
+
     # Keep home_inventory table for backward compat but products.home_qty is the source of truth
     c.execute('''CREATE TABLE IF NOT EXISTS home_inventory (
         item_num TEXT PRIMARY KEY,
