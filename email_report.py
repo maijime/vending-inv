@@ -14,16 +14,16 @@ def generate_html_report(date: str, sales_data: list, summary: dict) -> str:
     """Generate HTML email report."""
     low_stock_threshold = int(db.get_setting('low_stock_threshold') or 3)
     
-    # Get warehouse stock from products
+    # Get stock from products
     conn = db.get_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT i.item_num, COALESCE(p.home_qty, 0) as warehouse_qty
+        SELECT i.item_num, COALESCE(p.home_qty, 0) as stock_qty
         FROM items i
         LEFT JOIN products p ON i.product_id = p.id
         WHERE i.active = 1
     ''')
-    warehouse = {row['item_num']: row['warehouse_qty'] for row in cursor.fetchall()}
+    stock = {row['item_num']: row['stock_qty'] for row in cursor.fetchall()}
     
     # Get last restock date and sales since then
     last_restock = db.get_setting('last_restock_date')
@@ -146,12 +146,12 @@ def generate_html_report(date: str, sales_data: list, summary: dict) -> str:
     html += """
         <h3>📦 Current Inventory</h3>
         <table>
-            <tr><th>Item</th><th>Machine</th><th>Warehouse</th><th>Total</th></tr>
+            <tr><th>Item</th><th>Machine</th><th>Stock</th><th>Total</th></tr>
     """
     
     for item in sorted(sales_data, key=lambda x: x['item_num']):
         stock_class = 'low-stock' if item['inventory'] < low_stock_threshold else 'good-stock'
-        wh_qty = warehouse.get(item['item_num'], 0)
+        wh_qty = stock.get(item['item_num'], 0)
         total_qty = item['inventory'] + wh_qty
         
         html += f"""
