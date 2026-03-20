@@ -253,10 +253,13 @@ def items():
                  FROM items i LEFT JOIN products p ON i.product_id = p.id
                  WHERE i.active = 1 ORDER BY i.item_num''')
     slots = [dict(row) for row in c.fetchall()]
-    c.execute('SELECT id, name FROM products WHERE active = 1 ORDER BY name')
+    c.execute('SELECT id, name, unit_cost, category, home_qty FROM products WHERE active = 1 ORDER BY category, name')
     products = [dict(row) for row in c.fetchall()]
     conn.close()
-    return render_template('items.html', slots=slots, products=products)
+    categories = {}
+    for p in products:
+        categories.setdefault(p['category'], []).append(p)
+    return render_template('items.html', slots=slots, categories=categories)
 
 
 @app.route('/items/add', methods=['POST'])
@@ -310,18 +313,7 @@ def delete_item(item_num):
 
 @app.route('/products')
 def products_page():
-    conn = db.get_connection()
-    c = conn.cursor()
-    c.execute('SELECT * FROM products WHERE active = 1 ORDER BY category, name')
-    products = [dict(row) for row in c.fetchall()]
-    conn.close()
-    categories = {}
-    for p in products:
-        cat = p['category']
-        if cat not in categories:
-            categories[cat] = []
-        categories[cat].append(p)
-    return render_template('products.html', categories=categories)
+    return redirect(url_for('items'))
 
 
 @app.route('/products/add', methods=['POST'])
@@ -332,7 +324,7 @@ def add_product():
               (request.form['name'], float(request.form['unit_cost']), request.form['category']))
     conn.commit()
     conn.close()
-    return redirect(url_for('products_page'))
+    return redirect(url_for('items'))
 
 
 @app.route('/products/update/<int:pid>', methods=['POST'])
@@ -343,7 +335,7 @@ def update_product(pid):
               (request.form['name'], float(request.form['unit_cost']), request.form['category'], pid))
     conn.commit()
     conn.close()
-    return redirect(url_for('products_page'))
+    return redirect(url_for('items'))
 
 
 @app.route('/products/delete/<int:pid>', methods=['POST'])
@@ -353,7 +345,7 @@ def delete_product(pid):
     c.execute('UPDATE products SET active = 0 WHERE id = ?', (pid,))
     conn.commit()
     conn.close()
-    return redirect(url_for('products_page'))
+    return redirect(url_for('items'))
 
 
 @app.route('/settings', methods=['GET', 'POST'])

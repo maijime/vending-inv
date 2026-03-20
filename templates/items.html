@@ -2,40 +2,6 @@
 {% block header_title %}🏷️ Slots{% endblock %}
 
 {% block content %}
-<div class="card-header">Add Slot</div>
-<div class="card">
-    <form method="POST" action="/items/add">
-        <div class="form-field">
-            <label>Slot #</label>
-            <input type="text" name="item_num" required placeholder="0111">
-        </div>
-        <div class="form-field">
-            <label>Label</label>
-            <input type="text" name="item_name" required placeholder="Lays" style="width:140px;">
-        </div>
-        <div class="form-field">
-            <label>Capacity</label>
-            <input type="number" name="capacity" required min="1" placeholder="7">
-        </div>
-        <div class="form-field">
-            <label>Unit Cost</label>
-            <input type="number" name="unit_cost" required step="0.01" min="0" placeholder="0.40">
-        </div>
-        <div class="form-field">
-            <label>Product</label>
-            <select name="product_id" style="width:140px;">
-                <option value="">— None —</option>
-                {% for p in products %}
-                <option value="{{ p.id }}">{{ p.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="btn-row">
-            <button type="submit" class="btn btn-full">Add Slot</button>
-        </div>
-    </form>
-</div>
-
 <div class="card-header">Machine Slots ({{ slots | length }})</div>
 <div class="card">
     {% for slot in slots %}
@@ -48,23 +14,55 @@
                 {% if slot.product_name %} · → {{ slot.product_name }}{% endif %}
             </div>
         </div>
-        <div style="display:flex; gap:4px;">
-            <form method="POST" action="/items/edit/{{ slot.item_num }}">
-                <button type="submit" class="btn btn-small btn-secondary">Edit</button>
-            </form>
-            <form method="POST" action="/items/delete/{{ slot.item_num }}" onsubmit="return confirm('Remove slot {{ slot.item_num }}?');">
-                <button type="submit" class="btn btn-small btn-danger">Delete</button>
-            </form>
-        </div>
+        <form method="POST" action="/items/edit/{{ slot.item_num }}">
+            <button type="submit" class="btn btn-small btn-secondary">Edit</button>
+        </form>
     </div>
     {% endfor %}
 </div>
 
-<div class="card-header">Manage Products</div>
+<div class="card-header">Add Product</div>
 <div class="card">
-    <a href="/products" class="list-row" style="text-decoration:none; color:var(--text);">
-        <span class="list-row-label">🏪 Products & Categories</span>
-        <span class="list-row-value blue">→</span>
-    </a>
+    <form method="POST" action="/products/add">
+        <div class="form-field">
+            <label>Name</label>
+            <input type="text" name="name" required placeholder="Doritos" style="width:140px;">
+        </div>
+        <div class="form-field">
+            <label>Unit Cost</label>
+            <input type="number" name="unit_cost" required step="0.01" min="0" placeholder="0.50">
+        </div>
+        <div class="form-field">
+            <label>Category</label>
+            <select name="category" style="width:140px;">
+                <option>Chips</option>
+                <option>Salty Snacks</option>
+                <option>Sweets</option>
+                <option>Drinks</option>
+            </select>
+        </div>
+        <div class="btn-row">
+            <button type="submit" class="btn btn-full">Add Product</button>
+        </div>
+    </form>
 </div>
+
+{% for cat, prods in categories.items() %}
+<div class="card-header">{{ cat }}</div>
+<div class="card">
+    {% for p in prods %}
+    <div class="list-row" style="flex-wrap:wrap; gap:8px;">
+        <div style="flex:1; min-width:120px;">
+            <div class="list-row-label">{{ p.name }}</div>
+            <div style="font-size:12px; color:var(--text2);">
+                ${{ "%.2f"|format(p.unit_cost) }}/ea · Stock: {{ p.home_qty }}
+            </div>
+        </div>
+        <form method="POST" action="/products/delete/{{ p.id }}" onsubmit="return confirm('Delete {{ p.name }}?');">
+            <button type="submit" class="btn btn-small btn-danger">Delete</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% endfor %}
 {% endblock %}
