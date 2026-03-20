@@ -117,7 +117,7 @@ def inventory():
 
 @app.route('/inventory/update-stock', methods=['POST'])
 def update_stock():
-    """Update home stock for a product."""
+    """Update warehouse stock for a product."""
     conn = db.get_connection()
     c = conn.cursor()
     for key, value in request.form.items():
@@ -131,7 +131,7 @@ def update_stock():
 
 @app.route('/inventory/add-stock', methods=['POST'])
 def add_stock():
-    """Add to home stock (shopping run)."""
+    """Add to warehouse stock (shopping run)."""
     conn = db.get_connection()
     c = conn.cursor()
     for key, value in request.form.items():
@@ -197,7 +197,7 @@ def restock():
                         c.execute('INSERT OR REPLACE INTO inventory_snapshots (date, item_num, current_level, capacity) VALUES (?, ?, ?, ?)',
                                   (date, item_num, new_level, row['capacity']))
 
-            # Deduct from product home stock
+            # Deduct from product warehouse stock
             for pid, qty in product_deductions.items():
                 c.execute('UPDATE products SET home_qty = MAX(home_qty - ?, 0) WHERE id = ?', (qty, pid))
 

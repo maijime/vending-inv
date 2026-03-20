@@ -9,8 +9,8 @@ Designed to run on a Raspberry Pi with [Tailscale](https://tailscale.com) for re
 - **Automated data collection** from Seedlive portal (daily at 4:15 PM via cron)
 - **Mobile-first web dashboard** with iOS-style UI
 - **Email reports** via Gmail with sales summary and low stock alerts
-- **Inventory tracking** for both machine and home backup stock
-- **Restock workflow** — enter new levels, auto-deducts from home inventory
+- **Inventory tracking** for machine and warehouse stock
+- **Restock workflow** — enter new levels, auto-deducts from warehouse inventory
 - **Historical import** — bulk load past sales data in one shot
 - **CSV export** for accounting and tax prep
 - **Live sales check** — pull real-time data without saving to history

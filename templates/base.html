@@ -224,7 +224,7 @@
         <h1>{% block header_title %}Muscle Fuel{% endblock %}</h1>
         {% block header_sub %}{% endblock %}
         <div class="desktop-nav">
-            <a href="/" class="{% if request.path == '/' %}active{% endif %}">Home</a>
+            <a href="/" class="{% if request.path == '/' %}active{% endif %}">Dashboard</a>
             <a href="/inventory" class="{% if '/inventory' in request.path %}active{% endif %}">Inventory</a>
             <a href="/restock" class="{% if '/restock' in request.path %}active{% endif %}">Restock</a>
             <a href="/sales" class="{% if '/sales' in request.path %}active{% endif %}">Sales</a>
@@ -240,7 +240,7 @@
     <!-- iOS-style tab bar (mobile only) -->
     <div class="tab-bar">
         <a href="/" class="tab {% if request.path == '/' %}active{% endif %}">
-            <span class="tab-icon">🏠</span>Home
+            <span class="tab-icon">🏠</span>Dashboard
         </a>
         <a href="/inventory" class="tab {% if '/inventory' in request.path %}active{% endif %}">
             <span class="tab-icon">📦</span>Stock

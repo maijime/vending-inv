@@ -30,7 +30,7 @@
         <div class="form-field">
             <div>
                 <div style="font-size:15px;">{{ p.name }}</div>
-                <div style="font-size:12px; color:var(--text2);">Have: {{ p.home_qty }} · ${{ "%.2f"|format(p.unit_cost) }}</div>
+                <div style="font-size:12px; color:var(--text2);">In stock: {{ p.home_qty }} · ${{ "%.2f"|format(p.unit_cost) }}</div>
             </div>
             <input type="number" name="add_{{ p.id }}" min="0" placeholder="0" style="width:60px;">
         </div>
@@ -42,8 +42,8 @@
     </form>
 </div>
 
-<!-- Current Home Stock -->
-<div class="card-header">Home Stock by Product</div>
+<!-- Warehouse Stock -->
+<div class="card-header">Warehouse Stock by Product</div>
 <div class="card">
     <form method="POST" action="/inventory/update-stock">
         {% for cat, prods in categories.items() %}

@@ -23,7 +23,7 @@
                 <div style="font-size:12px; color:var(--text2);">
                     #{{ slot.item_num }} · {{ slot.current_level }}/{{ slot.capacity }}
                     {% if slot.need > 0 %} · <span style="color:var(--orange);">Need {{ slot.need }}</span>{% endif %}
-                    · Home: {{ p.home_qty }}
+                    · Warehouse: {{ p.home_qty }}
                 </div>
             </div>
             <input type="number" name="slot_{{ slot.item_num }}" class="restock-input"
@@ -46,7 +46,7 @@
 <div class="card">
     <div class="card-body" style="font-size:14px; color:var(--text2); line-height:1.5;">
         Enter the <strong style="color:var(--text);">new level</strong> for each slot after restocking.
-        Items added are automatically deducted from that product's home stock.
+        Items added are automatically deducted from that product's warehouse stock.
     </div>
 </div>
 {% endblock %}
