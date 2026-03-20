@@ -91,6 +91,8 @@ def index():
     return render_template('index.html', today=today,
                            restock_summary=restock_summary,
                            low_stock_count=low_stock_count,
+                           low_stock_threshold=low_stock_threshold,
+                           machine_slots=get_products_with_slots(),
                            week_comparison=week_comparison, best_day=best_day, greeting=greeting)
 
 
