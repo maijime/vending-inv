@@ -222,13 +222,23 @@
 <body>
     <div class="header">
         <h1>{% block header_title %}Muscle Fuel{% endblock %}</h1>
+        {% if current_user.is_authenticated and current_user.role == 'demo' %}
+        <div style="text-align:center; font-size:11px; color:var(--orange); font-weight:600;">DEMO MODE — Read Only</div>
+        {% endif %}
         {% block header_sub %}{% endblock %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+        <div style="margin:4px 16px; padding:6px 12px; border-radius:8px; font-size:13px; text-align:center;
+            {% if cat == 'error' %}background:#ffe5e5; color:#d00;{% elif cat == 'warning' %}background:#fff8e5; color:#a60;{% else %}background:#e5ffe5; color:#080;{% endif %}">{{ msg }}</div>
+        {% endfor %}
+        {% endwith %}
         <div class="desktop-nav">
             <a href="/" class="{% if request.path == '/' %}active{% endif %}">Dashboard</a>
             <a href="/inventory" class="{% if '/inventory' in request.path %}active{% endif %}">Inventory</a>
             <a href="/restock" class="{% if '/restock' in request.path %}active{% endif %}">Restock</a>
             <a href="/sales" class="{% if '/sales' in request.path %}active{% endif %}">Sales</a>
             <a href="/settings" class="{% if '/settings' in request.path %}active{% endif %}">Settings</a>
+            <a href="/logout">Logout</a>
         </div>
     </div>
 

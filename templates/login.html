@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Muscle Fuel — Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', sans-serif; background: #f2f2f7; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: white; border-radius: 16px; padding: 32px 24px; width: 320px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        h1 { font-size: 24px; text-align: center; margin-bottom: 4px; }
+        .sub { font-size: 13px; color: #8e8e93; text-align: center; margin-bottom: 24px; }
+        label { font-size: 13px; color: #8e8e93; display: block; margin-bottom: 4px; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 10px 12px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 16px; margin-bottom: 16px; background: #f9f9f9; }
+        input:focus { outline: none; border-color: #007aff; background: white; }
+        .btn { width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .btn:active { opacity: 0.8; }
+        .flash { padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; text-align: center; }
+        .flash.error { background: #ffe5e5; color: #d00; }
+        .flash.success { background: #e5ffe5; color: #080; }
+        .flash.warning { background: #fff8e5; color: #a60; }
+        .links { text-align: center; margin-top: 16px; font-size: 13px; }
+        .links a { color: #007aff; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1>💪 Muscle Fuel</h1>
+        <div class="sub">Vending Inventory System</div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+        {% endfor %}
+        {% endwith %}
+        <form method="POST">
+            <label>Username</label>
+            <input type="text" name="username" required autofocus>
+            <label>Password</label>
+            <input type="password" name="password" required>
+            <button type="submit" class="btn">Log In</button>
+        </form>
+        <div class="links">
+            <a href="/reset-password">Forgot password?</a>
+        </div>
+    </div>
+</body>
+</html>

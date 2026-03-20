@@ -60,23 +60,22 @@
 <!-- Machine Stock Levels -->
 <div class="card-header">Machine Stock</div>
 <div class="card">
-    {% for p in machine_slots.values() | sort(attribute='name') %}
-    {% for slot in p.slots %}
+    {% for slot in machine_slots %}
     <div class="list-row" style="padding:8px 16px;">
         <div>
-            <span style="font-size:14px;">{{ p.name }}</span>
+            <span style="font-size:14px;">{{ slot.product_name }}</span>
             <span style="font-size:11px; color:var(--text2);"> #{{ slot.item_num }}</span>
         </div>
-        <div style="display:flex; align-items:center; gap:6px;">
-            <span style="font-size:14px;">{{ slot.current_level }}/{{ slot.capacity }}</span>
-            {% if slot.current_level < low_stock_threshold %}
-            <span class="badge badge-red">Low</span>
-            {% elif slot.current_level == 0 %}
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:12px; color:var(--text2);">${{ "%.2f"|format(slot.revenue) }}</span>
+            <span style="font-size:14px; min-width:40px; text-align:right;">{{ slot.current_level }}/{{ slot.capacity }}</span>
+            {% if slot.current_level == 0 %}
             <span class="badge badge-red">Empty</span>
+            {% elif slot.current_level < low_stock_threshold %}
+            <span class="badge badge-red">Low</span>
             {% endif %}
         </div>
     </div>
-    {% endfor %}
     {% endfor %}
 </div>
 

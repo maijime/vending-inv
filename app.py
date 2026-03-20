@@ -1,11 +1,139 @@
 #!/usr/bin/env python3
-"""Flask web dashboard for vending machine management. v2.2"""
-from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
+"""Flask web dashboard for vending machine management. v2.3"""
+from flask import Flask, render_template, request, redirect, url_for, jsonify, Response, session, flash
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from datetime import datetime, timedelta
-import csv, io, os
+from functools import wraps
+import csv, io, os, random, smtplib
+from email.mime.text import MIMEText
+import bcrypt
 import database as db
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', os.urandom(24).hex())
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+# --- Auth ---
+
+class User(UserMixin):
+    def __init__(self, username, role='admin'):
+        self.id = username
+        self.role = role
+
+@login_manager.user_loader
+def load_user(username):
+    if username == 'demo':
+        return User('demo', 'demo')
+    stored = db.get_setting('admin_user')
+    if stored and username == stored:
+        return User(username, 'admin')
+    return None
+
+def admin_required(f):
+    """Block demo users from write operations."""
+    @wraps(f)
+    @login_required
+    def decorated(*args, **kwargs):
+        if current_user.role == 'demo':
+            flash('Demo mode — changes are disabled.', 'warning')
+            return redirect(request.referrer or url_for('index'))
+        return f(*args, **kwargs)
+    return decorated
+
+def _init_admin():
+    """Set default admin/admin if no admin exists."""
+    if not db.get_setting('admin_user'):
+        hashed = bcrypt.hashpw(b'admin', bcrypt.gensalt()).decode()
+        db.set_setting('admin_user', 'admin')
+        db.set_setting('admin_password', hashed)
+
+_init_admin()
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        # Demo login
+        if username == 'demo' and password == 'demo':
+            login_user(User('demo', 'demo'))
+            return redirect(url_for('index'))
+        # Admin login
+        stored_user = db.get_setting('admin_user')
+        stored_hash = db.get_setting('admin_password')
+        if stored_user and username == stored_user and stored_hash:
+            if bcrypt.checkpw(password.encode(), stored_hash.encode()):
+                login_user(User(username, 'admin'), remember=True)
+                return redirect(request.args.get('next') or url_for('index'))
+        flash('Invalid username or password.', 'error')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+@app.route('/reset-password', methods=['GET', 'POST'])
+def reset_password():
+    if request.method == 'POST':
+        step = request.form.get('step')
+        if step == 'send_code':
+            # Generate and email a 6-digit code
+            code = str(random.randint(100000, 999999))
+            session['reset_code'] = code
+            session['reset_expires'] = (datetime.now() + timedelta(minutes=10)).isoformat()
+            gmail_user = os.getenv('GMAIL_USER')
+            gmail_pass = os.getenv('GMAIL_APP_PASSWORD')
+            if gmail_user and gmail_pass:
+                try:
+                    msg = MIMEText(f'Your Muscle Fuel password reset code is: {code}\n\nExpires in 10 minutes.')
+                    msg['Subject'] = 'Muscle Fuel — Password Reset Code'
+                    msg['From'] = gmail_user
+                    msg['To'] = gmail_user
+                    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+                        server.login(gmail_user, gmail_pass)
+                        server.send_message(msg)
+                    flash('Code sent to your email.', 'success')
+                except Exception:
+                    flash('Failed to send email. Check SMTP settings.', 'error')
+            else:
+                flash('Email not configured.', 'error')
+            return render_template('reset_password.html', step='verify')
+
+        elif step == 'verify':
+            code = request.form.get('code', '').strip()
+            expires = session.get('reset_expires', '')
+            if expires and datetime.now() < datetime.fromisoformat(expires) and code == session.get('reset_code'):
+                session['reset_verified'] = True
+                return render_template('reset_password.html', step='new_password')
+            flash('Invalid or expired code.', 'error')
+            return render_template('reset_password.html', step='verify')
+
+        elif step == 'new_password':
+            if not session.get('reset_verified'):
+                return redirect(url_for('reset_password'))
+            new_user = request.form.get('username', '').strip()
+            new_pass = request.form.get('password', '').strip()
+            if new_user and new_pass:
+                hashed = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
+                db.set_setting('admin_user', new_user)
+                db.set_setting('admin_password', hashed)
+                session.pop('reset_code', None)
+                session.pop('reset_verified', None)
+                flash('Password updated. Please log in.', 'success')
+                return redirect(url_for('login'))
+            flash('Username and password required.', 'error')
+            return render_template('reset_password.html', step='new_password')
+
+    return render_template('reset_password.html', step='send_code')
 
 
 def get_products_with_slots():
@@ -45,7 +173,27 @@ def get_products_with_slots():
     return products
 
 
+def _build_machine_stock():
+    """Flat slot list sorted by item_num with revenue since restock."""
+    products = get_products_with_slots()
+    last_restock = db.get_setting('last_restock_date') or '2000-01-01'
+    conn = db.get_connection()
+    c = conn.cursor()
+    c.execute('SELECT item_num, SUM(revenue) as rev FROM daily_sales WHERE date >= ? GROUP BY item_num', (last_restock,))
+    rev_map = {row['item_num']: row['rev'] for row in c.fetchall()}
+    conn.close()
+    slots = []
+    for p in products.values():
+        for s in p['slots']:
+            s['product_name'] = p['name']
+            s['revenue'] = rev_map.get(s['item_num'], 0)
+            slots.append(s)
+    slots.sort(key=lambda s: s['item_num'])
+    return slots
+
+
 @app.route('/')
+@login_required
 def index():
     today = datetime.now().strftime("%Y-%m-%d")
 
@@ -92,11 +240,12 @@ def index():
                            restock_summary=restock_summary,
                            low_stock_count=low_stock_count,
                            low_stock_threshold=low_stock_threshold,
-                           machine_slots=get_products_with_slots(),
+                           machine_slots=_build_machine_stock(),
                            week_comparison=week_comparison, best_day=best_day, greeting=greeting)
 
 
 @app.route('/inventory')
+@login_required
 def inventory():
     products = get_products_with_slots()
 
@@ -120,6 +269,7 @@ def inventory():
 
 
 @app.route('/inventory/update-stock', methods=['POST'])
+@admin_required
 def update_stock():
     """Update stock for a product."""
     conn = db.get_connection()
@@ -134,6 +284,7 @@ def update_stock():
 
 
 @app.route('/inventory/add-stock', methods=['POST'])
+@admin_required
 def add_stock():
     """Add to stock (shopping run)."""
     conn = db.get_connection()
@@ -148,6 +299,7 @@ def add_stock():
 
 
 @app.route('/check-today')
+@login_required
 def check_today():
     from collect_data import get_vending_data
     today = datetime.now().strftime("%Y-%m-%d")
@@ -171,7 +323,12 @@ def check_today():
 
 
 @app.route('/restock', methods=['GET', 'POST'])
+@login_required
 def restock():
+    if request.method == 'POST':
+        if current_user.role == 'demo':
+            flash('Demo mode — changes are disabled.', 'warning')
+            return redirect(url_for('restock'))
     if request.method == 'POST':
         action = request.form.get('action')
         date = request.form.get('date', datetime.now().strftime('%Y-%m-%d'))
@@ -230,6 +387,7 @@ def restock():
 
 
 @app.route('/sales')
+@login_required
 def sales():
     end_date = request.args.get('end_date', datetime.now().strftime("%Y-%m-%d"))
     last_restock = db.get_setting('last_restock_date')
@@ -263,6 +421,7 @@ def items():
 
 
 @app.route('/items/add', methods=['POST'])
+@admin_required
 def add_item():
     conn = db.get_connection()
     c = conn.cursor()
@@ -276,6 +435,7 @@ def add_item():
 
 
 @app.route('/items/edit/<item_num>', methods=['POST'])
+@admin_required
 def edit_item(item_num):
     conn = db.get_connection()
     c = conn.cursor()
@@ -288,6 +448,7 @@ def edit_item(item_num):
 
 
 @app.route('/items/update/<item_num>', methods=['POST'])
+@admin_required
 def update_item(item_num):
     conn = db.get_connection()
     c = conn.cursor()
@@ -308,6 +469,7 @@ def update_item(item_num):
 
 
 @app.route('/items/delete/<item_num>', methods=['POST'])
+@admin_required
 def delete_item(item_num):
     conn = db.get_connection()
     c = conn.cursor()
@@ -323,6 +485,7 @@ def products_page():
 
 
 @app.route('/products/add', methods=['POST'])
+@admin_required
 def add_product():
     conn = db.get_connection()
     c = conn.cursor()
@@ -334,6 +497,7 @@ def add_product():
 
 
 @app.route('/products/update/<int:pid>', methods=['POST'])
+@admin_required
 def update_product(pid):
     conn = db.get_connection()
     c = conn.cursor()
@@ -345,6 +509,7 @@ def update_product(pid):
 
 
 @app.route('/products/delete/<int:pid>', methods=['POST'])
+@admin_required
 def delete_product(pid):
     conn = db.get_connection()
     c = conn.cursor()
@@ -355,6 +520,7 @@ def delete_product(pid):
 
 
 @app.route('/settings', methods=['GET', 'POST'])
+@admin_required
 def settings():
     if request.method == 'POST':
         db.set_setting('low_stock_threshold', request.form['low_stock_threshold'])
@@ -448,8 +614,6 @@ def health():
 
 if __name__ == '__main__':
     import sys
-    from dotenv import load_dotenv
-    load_dotenv()
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5001
-    print(f"\n💪 Muscle Fuel Dashboard v2.2 on http://localhost:{port}\n")
+    print(f"\n💪 Muscle Fuel Dashboard v2.3 on http://localhost:{port}\n")
     app.run(host='0.0.0.0', port=port, debug=True)
