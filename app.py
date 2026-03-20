@@ -94,25 +94,24 @@ def index():
 @app.route('/inventory')
 def inventory():
     products = get_products_with_slots()
-    low_stock_threshold = int(db.get_setting('low_stock_threshold') or 3)
-    last_restock = db.get_setting('last_restock_date')
-    sales_since_restock = None
-    if last_restock:
-        today = datetime.now().strftime('%Y-%m-%d')
-        sales_since_restock = db.get_sales_summary(last_restock, today)
-        sales_since_restock['start_date'] = last_restock
 
     # Group by category
     categories = {}
     for p in products.values():
-        cat = p['category']
-        if cat not in categories:
-            categories[cat] = []
-        categories[cat].append(p)
+        categories.setdefault(p['category'], []).append(p)
 
-    return render_template('inventory.html', categories=categories, products=products,
-                           low_stock_threshold=low_stock_threshold,
-                           sales_since_restock=sales_since_restock)
+    # Get slots for machine slots section
+    conn = db.get_connection()
+    c = conn.cursor()
+    c.execute('''SELECT i.item_num, i.item_name, i.capacity, i.unit_cost, i.product_id,
+                        p.name as product_name
+                 FROM items i LEFT JOIN products p ON i.product_id = p.id
+                 WHERE i.active = 1 ORDER BY i.item_num''')
+    slots = [dict(row) for row in c.fetchall()]
+    conn.close()
+
+    return render_template('inventory.html', categories=categories,
+                           slots=slots, slot_count=len(slots))
 
 
 @app.route('/inventory/update-stock', methods=['POST'])
@@ -233,10 +232,14 @@ def sales():
               (start_date, end_date))
     daily_sales = [dict(row) for row in c.fetchall()]
     summary = db.get_sales_summary(start_date, end_date)
-    c.execute('''SELECT i.item_name, SUM(ds.quantity_sold) as total_sold,
+    c.execute('''SELECT COALESCE(p.name, i.item_name) as item_name,
+                        SUM(ds.quantity_sold) as total_sold,
                         SUM(ds.revenue) as total_revenue, SUM(ds.profit) as total_profit
-                 FROM daily_sales ds JOIN items i ON ds.item_num = i.item_num
-                 WHERE ds.date BETWEEN ? AND ? GROUP BY ds.item_num ORDER BY total_sold DESC LIMIT 10''',
+                 FROM daily_sales ds
+                 JOIN items i ON ds.item_num = i.item_num
+                 LEFT JOIN products p ON COALESCE(ds.product_id, i.product_id) = p.id
+                 WHERE ds.date BETWEEN ? AND ?
+                 GROUP BY COALESCE(p.name, i.item_name) ORDER BY total_sold DESC LIMIT 10''',
               (start_date, end_date))
     top_sellers = [dict(row) for row in c.fetchall()]
     conn.close()
@@ -246,20 +249,7 @@ def sales():
 
 @app.route('/items')
 def items():
-    conn = db.get_connection()
-    c = conn.cursor()
-    c.execute('''SELECT i.item_num, i.item_name, i.capacity, i.unit_cost, i.product_id,
-                        p.name as product_name
-                 FROM items i LEFT JOIN products p ON i.product_id = p.id
-                 WHERE i.active = 1 ORDER BY i.item_num''')
-    slots = [dict(row) for row in c.fetchall()]
-    c.execute('SELECT id, name, unit_cost, category, home_qty FROM products WHERE active = 1 ORDER BY category, name')
-    products = [dict(row) for row in c.fetchall()]
-    conn.close()
-    categories = {}
-    for p in products:
-        categories.setdefault(p['category'], []).append(p)
-    return render_template('items.html', slots=slots, categories=categories)
+    return redirect(url_for('inventory'))
 
 
 @app.route('/items/add', methods=['POST'])
@@ -272,7 +262,7 @@ def add_item():
                int(request.form['product_id']) if request.form.get('product_id') else None))
     conn.commit()
     conn.close()
-    return redirect(url_for('items'))
+    return redirect(url_for('inventory'))
 
 
 @app.route('/items/edit/<item_num>', methods=['POST'])
@@ -298,7 +288,7 @@ def update_item(item_num):
                item_num))
     conn.commit()
     conn.close()
-    return redirect(url_for('items'))
+    return redirect(url_for('inventory'))
 
 
 @app.route('/items/delete/<item_num>', methods=['POST'])
@@ -308,12 +298,12 @@ def delete_item(item_num):
     c.execute('UPDATE items SET active = 0 WHERE item_num = ?', (item_num,))
     conn.commit()
     conn.close()
-    return redirect(url_for('items'))
+    return redirect(url_for('inventory'))
 
 
 @app.route('/products')
 def products_page():
-    return redirect(url_for('items'))
+    return redirect(url_for('inventory'))
 
 
 @app.route('/products/add', methods=['POST'])
@@ -324,7 +314,7 @@ def add_product():
               (request.form['name'], float(request.form['unit_cost']), request.form['category']))
     conn.commit()
     conn.close()
-    return redirect(url_for('items'))
+    return redirect(url_for('inventory'))
 
 
 @app.route('/products/update/<int:pid>', methods=['POST'])
@@ -335,7 +325,7 @@ def update_product(pid):
               (request.form['name'], float(request.form['unit_cost']), request.form['category'], pid))
     conn.commit()
     conn.close()
-    return redirect(url_for('items'))
+    return redirect(url_for('inventory'))
 
 
 @app.route('/products/delete/<int:pid>', methods=['POST'])
@@ -345,7 +335,7 @@ def delete_product(pid):
     c.execute('UPDATE products SET active = 0 WHERE id = ?', (pid,))
     conn.commit()
     conn.close()
-    return redirect(url_for('items'))
+    return redirect(url_for('inventory'))
 
 
 @app.route('/settings', methods=['GET', 'POST'])

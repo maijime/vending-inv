@@ -81,6 +81,12 @@ def init_database():
     except:
         pass
 
+    # Add product_id to daily_sales for slot rotation tracking
+    try:
+        c.execute("ALTER TABLE daily_sales ADD COLUMN product_id INTEGER REFERENCES products(id)")
+    except:
+        pass
+
     conn.commit()
     conn.close()
 
@@ -140,12 +146,16 @@ def migrate_products():
 def save_daily_data(date: str, sales_data: List[Dict]):
     conn = get_connection()
     c = conn.cursor()
+    # Get current slot→product mapping
+    c.execute('SELECT item_num, product_id FROM items WHERE active = 1')
+    slot_products = {row['item_num']: row['product_id'] for row in c.fetchall()}
     for item in sales_data:
+        pid = slot_products.get(item['item_num'])
         c.execute('''INSERT OR REPLACE INTO daily_sales
-            (date, item_num, quantity_sold, price, revenue, cost, profit)
-            VALUES (?, ?, ?, ?, ?, ?, ?)''',
+            (date, item_num, quantity_sold, price, revenue, cost, profit, product_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
             (date, item['item_num'], item['sold'], item['price'],
-             item['sales'], item['cost'] * item['sold'], item['profit']))
+             item['sales'], item['cost'] * item['sold'], item['profit'], pid))
         c.execute('''INSERT OR REPLACE INTO inventory_snapshots
             (date, item_num, current_level, capacity)
             VALUES (?, ?, ?, ?)''',

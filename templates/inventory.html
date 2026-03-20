@@ -2,47 +2,7 @@
 {% block header_title %}📦 Inventory{% endblock %}
 
 {% block content %}
-{% if sales_since_restock %}
-<div class="card-header">Since Restock · {{ sales_since_restock.start_date }}</div>
-<div class="card">
-    <div class="metrics">
-        <div class="metric">
-            <div class="metric-value">${{ "%.2f"|format(sales_since_restock.total_revenue or 0) }}</div>
-            <div class="metric-label">Revenue</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value green">${{ "%.2f"|format(sales_since_restock.total_profit or 0) }}</div>
-            <div class="metric-label">Profit</div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Add Stock (Shopping Run) -->
-<div class="card-header">Add Stock (Shopping Run)</div>
-<div class="card">
-    <form method="POST" action="/inventory/add-stock">
-        {% for cat, prods in categories.items() %}
-        <div class="list-row" style="background:var(--bg); font-size:12px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px;">
-            {{ cat }}
-        </div>
-        {% for p in prods %}
-        <div class="form-field">
-            <div>
-                <div style="font-size:15px;">{{ p.name }}</div>
-                <div style="font-size:12px; color:var(--text2);">In stock: {{ p.home_qty }} · ${{ "%.2f"|format(p.unit_cost) }}</div>
-            </div>
-            <input type="number" name="add_{{ p.id }}" min="0" placeholder="0" style="width:60px;">
-        </div>
-        {% endfor %}
-        {% endfor %}
-        <div class="btn-row">
-            <button type="submit" class="btn btn-full">Add to Inventory</button>
-        </div>
-    </form>
-</div>
-
-<!-- Stock -->
+<!-- Stock by Product -->
 <div class="card-header">Stock by Product</div>
 <div class="card">
     <form method="POST" action="/inventory/update-stock">
@@ -65,35 +25,77 @@
         {% endfor %}
         {% endfor %}
         <div class="btn-row">
-            <button type="submit" class="btn btn-full btn-secondary">Set Stock Levels</button>
+            <button type="submit" class="btn btn-full btn-secondary">Update Stock</button>
         </div>
     </form>
 </div>
 
-<!-- Machine Status -->
-<div class="card-header">Machine Slots</div>
+<!-- Shopping Run -->
+<div class="card-header">Shopping Run</div>
 <div class="card">
-    {% for cat, prods in categories.items() %}
-    {% for p in prods %}
-    {% for slot in p.slots %}
-    <div class="list-row">
-        <div>
-            <div class="list-row-label">{{ p.name }}</div>
-            <div style="font-size:12px; color:var(--text2);">#{{ slot.item_num }} · Cap: {{ slot.capacity }}</div>
+    <form method="POST" action="/inventory/add-stock">
+        {% for cat, prods in categories.items() %}
+        <div class="list-row" style="background:var(--bg); font-size:12px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px;">
+            {{ cat }}
         </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-            <span class="list-row-value">{{ slot.current_level }}/{{ slot.capacity }}</span>
-            {% if slot.current_level < low_stock_threshold %}
-                <span class="badge badge-red">Low</span>
-            {% elif slot.current_level == slot.capacity %}
-                <span class="badge badge-green">Full</span>
-            {% else %}
-                <span class="badge badge-green">OK</span>
-            {% endif %}
+        {% for p in prods %}
+        <div class="form-field">
+            <div>
+                <div style="font-size:15px;">{{ p.name }}</div>
+                <div style="font-size:12px; color:var(--text2);">In stock: {{ p.home_qty }}</div>
+            </div>
+            <input type="number" name="add_{{ p.id }}" min="0" placeholder="0" style="width:60px;">
         </div>
+        {% endfor %}
+        {% endfor %}
+        <div class="btn-row">
+            <button type="submit" class="btn btn-full">Add to Stock</button>
+        </div>
+    </form>
+</div>
+
+<!-- Machine Slots -->
+<div class="card-header">Machine Slots ({{ slot_count }})</div>
+<div class="card">
+    {% for slot in slots %}
+    <div class="list-row" style="flex-wrap:wrap; gap:8px;">
+        <div style="flex:1; min-width:120px;">
+            <div class="list-row-label">#{{ slot.item_num }} — {{ slot.product_name or slot.item_name }}</div>
+            <div style="font-size:12px; color:var(--text2);">
+                Cap: {{ slot.capacity }} · ${{ "%.2f"|format(slot.unit_cost) }}
+            </div>
+        </div>
+        <form method="POST" action="/items/edit/{{ slot.item_num }}">
+            <button type="submit" class="btn btn-small btn-secondary">Edit</button>
+        </form>
     </div>
     {% endfor %}
-    {% endfor %}
-    {% endfor %}
+</div>
+
+<!-- Add Product -->
+<div class="card-header">Add Product</div>
+<div class="card">
+    <form method="POST" action="/products/add">
+        <div class="form-field">
+            <label>Name</label>
+            <input type="text" name="name" required placeholder="Doritos" style="width:140px;">
+        </div>
+        <div class="form-field">
+            <label>Unit Cost</label>
+            <input type="number" name="unit_cost" required step="0.01" min="0" placeholder="0.50">
+        </div>
+        <div class="form-field">
+            <label>Category</label>
+            <select name="category" style="width:140px;">
+                <option>Chips</option>
+                <option>Salty Snacks</option>
+                <option>Sweets</option>
+                <option>Drinks</option>
+            </select>
+        </div>
+        <div class="btn-row">
+            <button type="submit" class="btn btn-full">Add Product</button>
+        </div>
+    </form>
 </div>
 {% endblock %}
