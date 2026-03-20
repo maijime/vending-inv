@@ -9,20 +9,23 @@ app = Flask(__name__)
 
 
 def get_products_with_slots():
-    """Get products grouped with their slot assignments."""
+    """Get products grouped with their slot assignments.
+    Current level = capacity - total sold since last restock."""
     conn = db.get_connection()
     c = conn.cursor()
+    last_restock = db.get_setting('last_restock_date') or '2000-01-01'
     c.execute('''
         SELECT p.id, p.name, p.unit_cost, p.category, p.home_qty,
                i.item_num, i.capacity,
-               COALESCE(inv.current_level, i.capacity) as current_level
+               i.capacity - COALESCE(
+                   (SELECT SUM(ds.quantity_sold) FROM daily_sales ds
+                    WHERE ds.item_num = i.item_num AND ds.date >= ?), 0
+               ) as current_level
         FROM products p
         JOIN items i ON i.product_id = p.id AND i.active = 1
-        LEFT JOIN inventory_snapshots inv ON i.item_num = inv.item_num
-            AND inv.date = (SELECT MAX(date) FROM inventory_snapshots WHERE item_num = i.item_num)
         WHERE p.active = 1
         ORDER BY p.category, p.name, i.item_num
-    ''')
+    ''', (last_restock,))
     rows = c.fetchall()
     conn.close()
 
@@ -36,8 +39,8 @@ def get_products_with_slots():
             }
         products[pid]['slots'].append({
             'item_num': row['item_num'], 'capacity': row['capacity'],
-            'current_level': row['current_level'],
-            'need': row['capacity'] - row['current_level']
+            'current_level': max(0, row['current_level']),
+            'need': max(0, row['capacity'] - row['current_level'])
         })
     return products
 
