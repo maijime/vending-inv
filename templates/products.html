@@ -4,31 +4,24 @@
 {% block head %}
 <style>
   .product-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer;
   }
   .product-row:last-child { border-bottom: none; }
   .product-info { flex: 1; min-width: 0; }
   .product-info .name { font-weight: 600; font-size: 15px; }
   .product-info .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .home-stock {
-    font-size: 20px; font-weight: 700; color: var(--accent);
-    min-width: 32px; text-align: right;
+  .home-stock { font-size: 20px; font-weight: 700; color: var(--accent); min-width: 32px; text-align: right; }
+  .cat-badge {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 20px; letter-spacing: .04em;
   }
+  .cat-Snacks       { background: #1e3a5f; color: #93c5fd; }
+  .cat-Small-Snacks { background: #3b1f5e; color: #c4b5fd; }
+  .cat-Drinks       { background: #14532d; color: #86efac; }
   .chevron { color: var(--muted); font-size: 18px; transition: transform .2s; }
   .chevron.open { transform: rotate(90deg); }
-
-  .edit-form {
-    display: none;
-    background: var(--bg);
-    border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 4px;
-  }
+  .edit-form { display: none; background: var(--bg); border-radius: 10px; padding: 14px; margin-bottom: 4px; }
   .edit-form.open { display: block; }
 </style>
 {% endblock %}
@@ -40,7 +33,7 @@
     <button class="btn btn-primary btn-sm" onclick="toggleAdd()">+ Add</button>
   </div>
 
-  <!-- Add product form -->
+  <!-- Add product -->
   <div class="edit-form" id="add-form" style="margin-bottom:12px">
     <div class="card-title">New Product</div>
     <form method="POST" action="{{ url_for('add_product') }}">
@@ -58,75 +51,92 @@
           <input type="number" name="capacity" value="7" min="1" required>
         </div>
       </div>
-      <div class="form-group">
-        <label>Home stock</label>
-        <input type="number" name="home_stock" value="0" min="0">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label>Category</label>
+          <select name="category">
+            {% for cat in categories %}
+            <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Home stock</label>
+          <input type="number" name="home_stock" value="0" min="0">
+        </div>
       </div>
       <div style="display:flex;gap:8px">
-        <button type="submit" class="btn btn-success" style="flex:1">Add product</button>
+        <button type="submit" class="btn btn-success" style="flex:1">Add</button>
         <button type="button" class="btn btn-outline" style="flex:1" onclick="toggleAdd()">Cancel</button>
       </div>
     </form>
   </div>
 
-  <!-- Product list -->
+  <!-- Group by category -->
+  {% set ns = namespace(current_cat='') %}
   <div class="card">
     {% for p in products %}
-    <div>
-      <div class="product-row" onclick="toggleEdit('{{ loop.index }}')">
-        <div class="product-info">
-          <div class="name">{{ p.name }}</div>
-          <div class="meta">
-            {{ p.slot_count }} slot{{ 's' if p.slot_count != 1 }} &middot; {{ p.slots }}
+      {% if p.category != ns.current_cat %}
+        {% if not loop.first %}</div><div class="card" style="margin-top:0">{% endif %}
+        {% set ns.current_cat = p.category %}
+        <div class="card-title">{{ p.category }}</div>
+      {% endif %}
+
+      <div>
+        <div class="product-row" onclick="toggleEdit('{{ loop.index }}')">
+          <div class="product-info">
+            <div class="name">{{ p.name }}</div>
+            <div class="meta">{{ p.slot_count }} slot{{ 's' if p.slot_count != 1 }} &middot; {{ p.slots }}</div>
           </div>
+          <div class="home-stock">{{ p.home_stock }}</div>
+          <div class="chevron" id="chevron-{{ loop.index }}">›</div>
         </div>
-        <div class="home-stock">{{ p.home_stock }}</div>
-        <div class="chevron" id="chevron-{{ loop.index }}">›</div>
-      </div>
 
-      <div class="edit-form" id="edit-{{ loop.index }}">
-        <form method="POST" action="{{ url_for('update_product') }}" style="margin-bottom:12px">
-          <input type="hidden" name="original_name" value="{{ p.name }}">
-          <div class="form-group">
-            <label>Product name</label>
-            <input type="text" name="name" value="{{ p.name }}" required>
-          </div>
-          <div class="form-group">
-            <label>Home stock (shared across {{ p.slot_count }} slot{{ 's' if p.slot_count != 1 }})</label>
-            <input type="number" name="home_stock" value="{{ p.home_stock }}" min="0">
-          </div>
-          <div style="display:flex;gap:8px">
-            <button type="submit" class="btn btn-primary" style="flex:1">Save</button>
-            <button type="button" class="btn btn-outline" style="flex:1"
-                    onclick="toggleEdit('{{ loop.index }}')">Cancel</button>
-          </div>
-        </form>
-
-        <!-- Delete -->
-        <form method="POST" action="{{ url_for('delete_product') }}"
-              onsubmit="return confirm('Remove {{ p.name }}? This cannot be undone.')">
-          <input type="hidden" name="name" value="{{ p.name }}">
-          <button type="submit" class="btn btn-danger btn-block btn-sm">
-            Remove "{{ p.name }}"
-          </button>
-        </form>
-        {% if p.slot_count > 0 %}
-        <p style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center">
-          Note: products with sales history cannot be deleted — rename instead.
-        </p>
-        {% endif %}
+        <div class="edit-form" id="edit-{{ loop.index }}">
+          <form method="POST" action="{{ url_for('update_product') }}" style="margin-bottom:12px">
+            <input type="hidden" name="original_name" value="{{ p.name }}">
+            <div class="form-group">
+              <label>Product name</label>
+              <input type="text" name="name" value="{{ p.name }}" required>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="form-group">
+                <label>Category</label>
+                <select name="category">
+                  {% for cat in categories %}
+                  <option value="{{ cat }}" {% if cat == p.category %}selected{% endif %}>{{ cat }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Home stock</label>
+                <input type="number" name="home_stock" value="{{ p.home_stock }}" min="0">
+              </div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button type="submit" class="btn btn-primary" style="flex:1">Save</button>
+              <button type="button" class="btn btn-outline" style="flex:1"
+                      onclick="toggleEdit('{{ loop.index }}')">Cancel</button>
+            </div>
+          </form>
+          <form method="POST" action="{{ url_for('delete_product') }}"
+                onsubmit="return confirm('Remove {{ p.name }}?')">
+            <input type="hidden" name="name" value="{{ p.name }}">
+            <button type="submit" class="btn btn-danger btn-block btn-sm">Remove "{{ p.name }}"</button>
+          </form>
+          <p style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center">
+            Products with sales history cannot be deleted — rename instead.
+          </p>
+        </div>
       </div>
-    </div>
     {% endfor %}
   </div>
 </div>
 
 <script>
   function toggleEdit(id) {
-    const form    = document.getElementById('edit-' + id);
-    const chevron = document.getElementById('chevron-' + id);
-    form.classList.toggle('open');
-    chevron.classList.toggle('open');
+    document.getElementById('edit-' + id).classList.toggle('open');
+    document.getElementById('chevron-' + id).classList.toggle('open');
   }
   function toggleAdd() {
     document.getElementById('add-form').classList.toggle('open');

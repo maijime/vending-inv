@@ -5,20 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Vending{% endblock %}</title>
   <style>
-    /* ── Reset & base ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg:       #0f1117;
-      --surface:  #1a1d27;
-      --border:   #2a2d3a;
-      --accent:   #3b82f6;
-      --green:    #22c55e;
-      --yellow:   #eab308;
-      --red:      #ef4444;
-      --text:     #e2e8f0;
-      --muted:    #64748b;
-      --radius:   12px;
-      --nav-h:    56px;
+      --bg:      #0f1117;
+      --surface: #1a1d27;
+      --border:  #2a2d3a;
+      --accent:  #3b82f6;
+      --green:   #22c55e;
+      --yellow:  #eab308;
+      --red:     #ef4444;
+      --text:    #e2e8f0;
+      --muted:   #64748b;
+      --radius:  12px;
+      --nav-h:   56px;
     }
     html, body { height: 100%; }
     body {
@@ -32,8 +31,7 @@
 
     /* ── Bottom nav ── */
     nav {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
+      position: fixed; bottom: 0; left: 0; right: 0;
       height: var(--nav-h);
       background: var(--surface);
       border-top: 1px solid var(--border);
@@ -42,63 +40,37 @@
       z-index: 100;
     }
     nav a {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 11px;
-      font-weight: 500;
-      transition: color .15s;
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 3px; color: var(--muted); text-decoration: none;
+      font-size: 11px; font-weight: 500; transition: color .15s;
     }
     nav a.active, nav a:active { color: var(--accent); }
     nav a svg { width: 22px; height: 22px; }
 
-    /* ── Page wrapper ── */
+    /* ── Page ── */
     .page { padding: 16px; max-width: 600px; margin: 0 auto; }
 
     /* ── Cards ── */
     .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
     }
     .card-title {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      color: var(--muted);
-      margin-bottom: 10px;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--muted); margin-bottom: 10px;
     }
 
-    /* ── Summary row ── */
+    /* ── Summary ── */
     .summary-row { display: flex; gap: 10px; margin-bottom: 12px; }
     .summary-card {
-      flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px 12px;
-      text-align: center;
+      flex: 1; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 12px; text-align: center;
     }
-    .summary-card .val {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--green);
-    }
-    .summary-card .lbl {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 2px;
-    }
+    .summary-card .val { font-size: 22px; font-weight: 700; color: var(--green); }
+    .summary-card .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-    /* ── Flash messages ── */
+    /* ── Flash ── */
     .flash { padding: 12px 16px; border-radius: var(--radius); margin-bottom: 12px; font-size: 14px; }
     .flash.success { background: #14532d; color: #86efac; }
     .flash.error   { background: #450a0a; color: #fca5a5; }
@@ -107,33 +79,24 @@
     /* ── Buttons ── */
     .btn {
       display: inline-flex; align-items: center; justify-content: center;
-      gap: 6px;
-      padding: 10px 18px;
-      border-radius: 8px;
-      font-size: 14px; font-weight: 600;
-      border: none; cursor: pointer;
-      text-decoration: none;
-      transition: opacity .15s;
+      gap: 6px; padding: 10px 18px; border-radius: 8px;
+      font-size: 14px; font-weight: 600; border: none; cursor: pointer;
+      text-decoration: none; transition: opacity .15s;
     }
     .btn:active { opacity: .75; }
-    .btn-primary  { background: var(--accent);  color: #fff; }
-    .btn-success  { background: var(--green);   color: #000; }
-    .btn-danger   { background: var(--red);     color: #fff; }
-    .btn-outline  { background: transparent; border: 1px solid var(--border); color: var(--text); }
-    .btn-block    { width: 100%; }
-    .btn-sm       { padding: 7px 14px; font-size: 13px; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-success { background: var(--green);  color: #000; }
+    .btn-danger  { background: var(--red);    color: #fff; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-block   { width: 100%; }
+    .btn-sm      { padding: 7px 14px; font-size: 13px; }
 
     /* ── Inputs ── */
     input[type=text], input[type=password], input[type=date],
     input[type=number], textarea, select {
-      width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      padding: 10px 12px;
-      font-size: 15px;
-      outline: none;
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text);
+      padding: 10px 12px; font-size: 15px; outline: none;
       transition: border-color .15s;
     }
     input:focus, textarea:focus, select:focus { border-color: var(--accent); }
@@ -148,23 +111,16 @@
 
     /* ── Modal ── */
     .modal-overlay {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,.6);
-      z-index: 200;
-      align-items: flex-end;
-      justify-content: center;
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.6); z-index: 200;
+      align-items: flex-end; justify-content: center;
     }
     .modal-overlay.open { display: flex; }
     .modal {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--radius) var(--radius) 0 0;
-      padding: 20px 16px;
-      width: 100%;
-      max-width: 600px;
-      max-height: 90vh;
-      overflow-y: auto;
+      padding: 20px 16px; width: 100%; max-width: 600px;
+      max-height: 90vh; overflow-y: auto;
     }
     .modal-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -178,9 +134,11 @@
 
     /* ── Table ── */
     .table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .table th { text-align: left; color: var(--muted); font-size: 11px; font-weight: 600;
-                text-transform: uppercase; letter-spacing: .05em;
-                padding: 6px 8px; border-bottom: 1px solid var(--border); }
+    .table th {
+      text-align: left; color: var(--muted); font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .05em;
+      padding: 6px 8px; border-bottom: 1px solid var(--border);
+    }
     .table td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
     .table tr:last-child td { border-bottom: none; }
 
@@ -195,7 +153,7 @@
     .mt-16 { margin-top: 16px; }
     .flex  { display: flex; }
     .gap-8 { gap: 8px; }
-    .items-center { align-items: center; }
+    .items-center    { align-items: center; }
     .justify-between { justify-content: space-between; }
   </style>
   {% block head %}{% endblock %}
@@ -215,38 +173,46 @@
   {% block content %}{% endblock %}
 </main>
 
-<!-- Bottom nav -->
+<!-- Bottom nav (4 tabs — Restock removed, handled via slot modal) -->
 <nav>
-  <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">
+  <a href="{{ url_for('index') }}"
+     class="{% if request.endpoint == 'index' %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+      <rect x="3" y="3" width="7" height="7" rx="1"/>
+      <rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <rect x="14" y="14" width="7" height="7" rx="1"/>
     </svg>
     Machine
   </a>
-  <a href="{{ url_for('products') }}" class="{% if request.endpoint in ['products','update_product'] %}active{% endif %}">
+  <a href="{{ url_for('products') }}"
+     class="{% if request.endpoint in ['products','update_product','add_product','delete_product'] %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
       <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
     </svg>
     Products
   </a>
-  <a href="{{ url_for('restock') }}" class="{% if request.endpoint == 'restock' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M12 5v14M5 12l7-7 7 7"/>
-    </svg>
-    Restock
-  </a>
-  <a href="{{ url_for('sales') }}" class="{% if request.endpoint == 'sales' %}active{% endif %}">
+  <a href="{{ url_for('sales') }}"
+     class="{% if request.endpoint == 'sales' %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
     </svg>
     Sales
   </a>
-  <a href="{{ url_for('settings') }}" class="{% if request.endpoint == 'settings' %}active{% endif %}">
+  <a href="{{ url_for('settings') }}"
+     class="{% if request.endpoint == 'settings' %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
+               a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09
+               A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83
+               l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
+               A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83
+               l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09
+               a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83
+               l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09
+               a1.65 1.65 0 0 0-1.51 1z"/>
     </svg>
     Settings
   </a>
@@ -259,17 +225,22 @@
       <span class="modal-title" id="modalTitle">Slot</span>
       <button class="modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
-    <div id="modalBody">Loading…</div>
+    <div id="modalBody">
+      <div style="color:var(--muted);text-align:center;padding:24px">Loading…</div>
+    </div>
   </div>
 </div>
 
 <script>
+  let _slotData = null;
+
   function openSlot(itemNum) {
     document.getElementById('slotModal').classList.add('open');
-    document.getElementById('modalBody').innerHTML = 'Loading…';
+    document.getElementById('modalBody').innerHTML =
+      '<div style="color:var(--muted);text-align:center;padding:24px">Loading…</div>';
     fetch('/api/slot/' + itemNum)
       .then(r => r.json())
-      .then(d => renderModal(d));
+      .then(d => { _slotData = d; renderModal(d); });
   }
 
   function closeModal() {
@@ -281,13 +252,28 @@
   });
 
   function renderModal(d) {
-    const pct = Math.round((d.current_level / d.capacity) * 100);
+    const pct = d.capacity ? Math.round((d.current_level / d.capacity) * 100) : 0;
     const col = pct > 50 ? 'var(--green)' : pct > 20 ? 'var(--yellow)' : 'var(--red)';
-    document.getElementById('modalTitle').textContent = d.name + ' (' + d.item_num + ')';
+    const fillLabel = d.last_fill_date ? 'Last filled ' + d.last_fill_date : 'Never filled';
+
+    const pickerItems = d.products.map(p =>
+      `<div onclick="swapProduct('${d.item_num}','${p.name.replace(/'/g,"\\'")}')"
+            style="padding:10px 12px;border-radius:8px;cursor:pointer;
+                   display:flex;justify-content:space-between;align-items:center;
+                   background:${p.name===d.name ? 'var(--border)' : 'transparent'};
+                   margin-bottom:4px">
+         <span style="font-weight:${p.name===d.name ? '700' : '400'}">${p.name}</span>
+         <span style="font-size:12px;color:var(--muted)">${p.home_stock} at home</span>
+       </div>`
+    ).join('');
+
+    document.getElementById('modalTitle').textContent = d.name + ' · ' + d.item_num;
     document.getElementById('modalBody').innerHTML = `
-      <div style="margin-bottom:18px">
+
+      <!-- Stock bar -->
+      <div style="margin-bottom:16px">
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">
-          <span style="color:var(--muted)">Machine stock</span>
+          <span style="color:var(--muted)">${fillLabel}</span>
           <span style="font-weight:700;color:${col}">${d.current_level} / ${d.capacity}</span>
         </div>
         <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden">
@@ -295,56 +281,83 @@
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+      <!-- Stats -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
         <div class="card" style="margin:0;text-align:center">
-          <div style="font-size:22px;font-weight:700;color:var(--accent)">${d.home_stock}</div>
-          <div style="font-size:11px;color:var(--muted)">At home (shared)</div>
+          <div style="font-size:20px;font-weight:700;color:var(--accent)">${d.home_stock}</div>
+          <div style="font-size:11px;color:var(--muted)">At home</div>
         </div>
         <div class="card" style="margin:0;text-align:center">
-          <div style="font-size:22px;font-weight:700">${d.week_sold}</div>
+          <div style="font-size:20px;font-weight:700">${d.week_sold}</div>
           <div style="font-size:11px;color:var(--muted)">Sold (7 days)</div>
         </div>
         <div class="card" style="margin:0;text-align:center">
-          <div style="font-size:22px;font-weight:700;color:var(--green)">$${d.since_restock.revenue.toFixed(2)}</div>
-          <div style="font-size:11px;color:var(--muted)">Revenue since restock</div>
+          <div style="font-size:20px;font-weight:700;color:var(--green)">
+            $${(d.since_fill.revenue||0).toFixed(2)}
+          </div>
+          <div style="font-size:11px;color:var(--muted)">Revenue since fill</div>
         </div>
         <div class="card" style="margin:0;text-align:center">
-          <div style="font-size:22px;font-weight:700;color:var(--green)">$${d.since_restock.profit.toFixed(2)}</div>
-          <div style="font-size:11px;color:var(--muted)">Profit since restock</div>
+          <div style="font-size:20px;font-weight:700;color:var(--green)">
+            $${(d.since_fill.profit||0).toFixed(2)}
+          </div>
+          <div style="font-size:11px;color:var(--muted)">Profit since fill</div>
         </div>
       </div>
 
       <hr>
+
+      <!-- Log fill -->
+      <div style="margin-top:14px;margin-bottom:16px">
+        <div class="card-title">Log Fill</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div class="form-group" style="margin:0">
+            <label>Qty filled (max ${d.capacity})</label>
+            <input type="number" id="fillQty" min="0" max="${d.capacity}"
+                   placeholder="${d.capacity}"
+                   style="text-align:center;font-weight:700;font-size:20px">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Date</label>
+            <input type="date" id="fillDate" value="${d.today}">
+          </div>
+        </div>
+        <button class="btn btn-success btn-block" onclick="logFill('${d.item_num}')">
+          Save fill
+        </button>
+      </div>
+
+      <hr>
+
+      <!-- Swap product -->
       <div style="margin-top:14px">
-        <div class="card-title">Edit Slot</div>
-        <div class="form-group">
-          <label>Product name</label>
-          <input type="text" id="editName" value="${d.name}">
+        <div class="card-title">Swap Product — ${d.category}</div>
+        <div style="background:var(--bg);border-radius:8px;padding:8px">
+          ${pickerItems ||
+            '<div style="color:var(--muted);font-size:13px;padding:8px">No products in this category — add them in Products.</div>'}
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div class="form-group">
-            <label>Capacity</label>
-            <input type="number" id="editCap" value="${d.capacity}" min="1">
-          </div>
-          <div class="form-group">
-            <label>Home stock</label>
-            <input type="number" id="editHome" value="${d.home_stock}" min="0">
-          </div>
-        </div>
-        <button class="btn btn-primary btn-block" onclick="saveSlot('${d.item_num}')">Save changes</button>
       </div>
     `;
   }
 
-  function saveSlot(itemNum) {
-    fetch('/api/slot/' + itemNum + '/update', {
-      method: 'POST',
+  function logFill(itemNum) {
+    const qty  = parseInt(document.getElementById('fillQty').value);
+    const date = document.getElementById('fillDate').value;
+    if (isNaN(qty) || qty < 0) { alert('Enter a valid quantity.'); return; }
+    fetch('/api/slot/' + itemNum + '/fill', {
+      method:  'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        name:       document.getElementById('editName').value,
-        capacity:   document.getElementById('editCap').value,
-        home_stock: document.getElementById('editHome').value,
-      }),
+      body:    JSON.stringify({ qty, date }),
+    }).then(() => { closeModal(); location.reload(); });
+  }
+
+  function swapProduct(itemNum, newName) {
+    if (_slotData && newName === _slotData.name) return;
+    if (!confirm('Swap this slot to ' + newName + '?')) return;
+    fetch('/api/slot/' + itemNum + '/swap', {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify({ name: newName }),
     }).then(() => { closeModal(); location.reload(); });
   }
 </script>
