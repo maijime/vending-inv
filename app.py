@@ -331,6 +331,28 @@ def export_csv():
 
 
 # ---------------------------------------------------------------------------
+# Products (manage unique product names + home stock)
+# ---------------------------------------------------------------------------
+
+@app.route('/products')
+@login_required
+def products():
+    return render_template('products.html', products=db.get_products())
+
+
+@app.route('/products/update', methods=['POST'])
+@login_required
+def update_product():
+    original_name = request.form.get('original_name')
+    new_name      = request.form.get('name', '').strip()
+    home_stock    = int(request.form.get('home_stock', 0))
+    if original_name and new_name:
+        db.update_product(original_name, new_name, home_stock)
+        flash(f'"{new_name}" updated.', 'success')
+    return redirect(url_for('products'))
+
+
+# ---------------------------------------------------------------------------
 # Settings
 # ---------------------------------------------------------------------------
 

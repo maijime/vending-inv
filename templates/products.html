@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Products{% endblock %}
+
+{% block head %}
+<style>
+  .product-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .product-row:last-child { border-bottom: none; }
+  .product-info { flex: 1; min-width: 0; }
+  .product-info .name { font-weight: 600; font-size: 15px; }
+  .product-info .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .home-stock {
+    font-size: 20px; font-weight: 700; color: var(--accent);
+    min-width: 32px; text-align: right;
+  }
+  .chevron { color: var(--muted); font-size: 18px; }
+
+  /* Edit form (inline expand) */
+  .edit-form {
+    display: none;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 4px;
+  }
+  .edit-form.open { display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="page-title">Products</div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+    Home stock is shared across all slots with the same product name.
+    Tap a product to rename it or update stock.
+  </p>
+
+  <div class="card">
+    {% for p in products %}
+    <div>
+      <div class="product-row" onclick="toggleEdit('{{ loop.index }}')">
+        <div class="product-info">
+          <div class="name">{{ p.name }}</div>
+          <div class="meta">
+            {{ p.slot_count }} slot{{ 's' if p.slot_count != 1 }} &middot; {{ p.slots }}
+          </div>
+        </div>
+        <div class="home-stock">{{ p.home_stock }}</div>
+        <div class="chevron">›</div>
+      </div>
+
+      <div class="edit-form" id="edit-{{ loop.index }}">
+        <form method="POST" action="{{ url_for('update_product') }}">
+          <input type="hidden" name="original_name" value="{{ p.name }}">
+          <div class="form-group">
+            <label>Product name</label>
+            <input type="text" name="name" value="{{ p.name }}" required>
+          </div>
+          <div class="form-group">
+            <label>Home stock (shared across {{ p.slot_count }} slot{{ 's' if p.slot_count != 1 }})</label>
+            <input type="number" name="home_stock" value="{{ p.home_stock }}" min="0">
+          </div>
+          <div style="display:flex;gap:8px">
+            <button type="submit" class="btn btn-primary" style="flex:1">Save</button>
+            <button type="button" class="btn btn-outline" style="flex:1"
+                    onclick="toggleEdit('{{ loop.index }}')">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  function toggleEdit(id) {
+    const el = document.getElementById('edit-' + id);
+    el.classList.toggle('open');
+  }
+</script>
+{% endblock %}

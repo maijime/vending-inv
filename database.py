@@ -213,18 +213,58 @@ def get_slot(item_num: str) -> Optional[Dict]:
 
 
 def update_slot(item_num: str, name: str, capacity: int, home_stock: int):
+    """Update a slot. home_stock is shared — synced to all slots with the same name."""
     conn = get_connection()
     c = conn.cursor()
+    # Get old name to know if we're renaming
+    c.execute('SELECT name FROM slots WHERE item_num=?', (item_num,))
+    old = c.fetchone()
+    old_name = old['name'] if old else None
+
+    # Update this slot
     c.execute('UPDATE slots SET name=?, capacity=?, home_stock=? WHERE item_num=?',
               (name, capacity, home_stock, item_num))
+
+    # Sync home_stock to all slots sharing the new name
+    c.execute('UPDATE slots SET home_stock=? WHERE name=?', (home_stock, name))
+
     conn.commit()
     conn.close()
 
 
 def update_home_stock(item_num: str, home_stock: int):
+    """Update home_stock for all slots sharing the same product name."""
     conn = get_connection()
     c = conn.cursor()
-    c.execute('UPDATE slots SET home_stock=? WHERE item_num=?', (home_stock, item_num))
+    c.execute('SELECT name FROM slots WHERE item_num=?', (item_num,))
+    row = c.fetchone()
+    if row:
+        c.execute('UPDATE slots SET home_stock=? WHERE name=?', (home_stock, row['name']))
+    conn.commit()
+    conn.close()
+
+
+def get_products() -> List[Dict]:
+    """Return unique products (grouped by name) with total home_stock and slot list."""
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute('''SELECT name, home_stock,
+                        COUNT(*) as slot_count,
+                        GROUP_CONCAT(item_num, ', ') as slots,
+                        MAX(capacity) as capacity
+                 FROM slots WHERE active=1
+                 GROUP BY name ORDER BY name''')
+    results = [dict(row) for row in c.fetchall()]
+    conn.close()
+    return results
+
+
+def update_product(name: str, new_name: str, home_stock: int):
+    """Rename a product and update home_stock across all its slots."""
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute('UPDATE slots SET name=?, home_stock=? WHERE name=?',
+              (new_name, home_stock, name))
     conn.commit()
     conn.close()
 

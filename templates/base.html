@@ -224,6 +224,13 @@
     </svg>
     Machine
   </a>
+  <a href="{{ url_for('products') }}" class="{% if request.endpoint in ['products','update_product'] %}active{% endif %}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+    </svg>
+    Products
+  </a>
   <a href="{{ url_for('restock') }}" class="{% if request.endpoint == 'restock' %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M12 5v14M5 12l7-7 7 7"/>
@@ -291,7 +298,7 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
         <div class="card" style="margin:0;text-align:center">
           <div style="font-size:22px;font-weight:700;color:var(--accent)">${d.home_stock}</div>
-          <div style="font-size:11px;color:var(--muted)">At home</div>
+          <div style="font-size:11px;color:var(--muted)">At home (shared)</div>
         </div>
         <div class="card" style="margin:0;text-align:center">
           <div style="font-size:22px;font-weight:700">${d.week_sold}</div>
