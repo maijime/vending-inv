@@ -184,9 +184,9 @@ def get_slots_with_levels() -> List[Dict]:
     ''')
     restock_levels = {row['item_num']: row['qty_filled'] for row in c.fetchall()}
 
-    # Sales since last restock
+    # Sales since last restock (>= so same-day post-restock sales are counted)
     c.execute('''SELECT item_num, SUM(quantity_sold) as sold
-                 FROM daily_sales WHERE date > ?
+                 FROM daily_sales WHERE date >= ?
                  GROUP BY item_num''', (last_restock_date,))
     sold_since = {row['item_num']: row['sold'] for row in c.fetchall()}
 
