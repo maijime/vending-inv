@@ -86,6 +86,17 @@
   .drink-level { font-size: 20px; font-weight: 700; }
   .drink-cap { font-size: 10px; color: var(--muted); }
 
+  /* Summary tabs */
+  .sum-tab {
+    flex: 1; padding: 7px 0; font-size: 12px; font-weight: 600;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted); cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .sum-tab.active {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+
   /* Alert chip */
   .alert-chip {
     display: inline-flex; align-items: center; gap: 5px;
@@ -101,21 +112,28 @@
 {% block content %}
 <div class="page">
 
-  <!-- Summary -->
-  <div class="summary-row">
+  <!-- Summary tabs -->
+  <div style="display:flex;gap:6px;margin-bottom:10px" id="summary-tabs">
+    <button class="sum-tab active" onclick="showSummary('week',this)">This Week</button>
+    <button class="sum-tab" onclick="showSummary('two_week',this)">2 Weeks</button>
+    <button class="sum-tab" onclick="showSummary('month',this)">Month</button>
+  </div>
+  {% for key, label in [('week','This Week'),('two_week','Last 2 Weeks'),('month','This Month')] %}
+  <div class="summary-row sum-panel" id="sum-{{ key }}" style="{{ 'display:flex' if loop.first else 'display:none' }}">
     <div class="summary-card">
-      <div class="val">${{ '%.2f'|format(summary.total_revenue or 0) }}</div>
-      <div class="lbl">Revenue{% if last_restock %} since {{ last_restock }}{% endif %}</div>
+      <div class="val">${{ '%.2f'|format(summary[key].total_revenue or 0) }}</div>
+      <div class="lbl">Revenue</div>
     </div>
     <div class="summary-card">
-      <div class="val">${{ '%.2f'|format(summary.total_profit or 0) }}</div>
+      <div class="val">${{ '%.2f'|format(summary[key].total_profit or 0) }}</div>
       <div class="lbl">Profit</div>
     </div>
     <div class="summary-card">
-      <div class="val">{{ summary.total_items or 0 }}</div>
+      <div class="val">{{ summary[key].total_items or 0 }}</div>
       <div class="lbl">Items sold</div>
     </div>
   </div>
+  {% endfor %}
 
   {% if low_count > 0 %}
   <div class="alert-chip">
@@ -170,4 +188,12 @@
   </div>
 
 </div>
+<script>
+function showSummary(key, btn) {
+  document.querySelectorAll('.sum-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.sum-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('sum-' + key).style.display = 'flex';
+  btn.classList.add('active');
+}
+</script>
 {% endblock %}

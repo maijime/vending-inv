@@ -167,9 +167,16 @@ def index():
     low_threshold = int(db.get_setting('low_stock_threshold') or 3)
     low_count = sum(1 for s in slots if s['current_level'] < low_threshold)
 
-    today = datetime.now().strftime('%Y-%m-%d')
+    today       = datetime.now().strftime('%Y-%m-%d')
+    week_start  = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+    two_week    = (datetime.now() - timedelta(days=14)).strftime('%Y-%m-%d')
     month_start = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-    summary = db.get_sales_summary(month_start, today)
+
+    summary = {
+        'week':     db.get_sales_summary(week_start, today),
+        'two_week': db.get_sales_summary(two_week, today),
+        'month':    db.get_sales_summary(month_start, today),
+    }
 
     return render_template('index.html', machine=machine,
                            low_count=low_count, low_threshold=low_threshold,
