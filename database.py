@@ -269,6 +269,41 @@ def update_product(name: str, new_name: str, home_stock: int):
     conn.close()
 
 
+def delete_product(name: str) -> bool:
+    """
+    Remove all slots for this product name.
+    Returns False if any slot has sales history (safety check).
+    """
+    conn = get_connection()
+    c = conn.cursor()
+    # Safety: check for sales history
+    c.execute('''SELECT COUNT(*) FROM daily_sales ds
+                 JOIN slots s ON ds.item_num = s.item_num
+                 WHERE s.name = ?''', (name,))
+    if c.fetchone()[0] > 0:
+        conn.close()
+        return False
+    c.execute('UPDATE slots SET active=0 WHERE name=?', (name,))
+    conn.commit()
+    conn.close()
+    return True
+
+
+def add_slot(item_num: str, name: str, capacity: int, home_stock: int = 0) -> bool:
+    """Add a new slot. Returns False if item_num already exists."""
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute('INSERT INTO slots (item_num, name, capacity, home_stock) VALUES (?,?,?,?)',
+                  (item_num, name, capacity, home_stock))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        conn.close()
+        return False
+
+
 # ---------------------------------------------------------------------------
 # Restock helpers
 # ---------------------------------------------------------------------------

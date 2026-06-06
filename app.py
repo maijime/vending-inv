@@ -352,6 +352,33 @@ def update_product():
     return redirect(url_for('products'))
 
 
+@app.route('/products/add', methods=['POST'])
+@login_required
+def add_product():
+    name       = request.form.get('name', '').strip()
+    item_num   = request.form.get('item_num', '').strip().zfill(4)
+    capacity   = int(request.form.get('capacity', 7))
+    home_stock = int(request.form.get('home_stock', 0))
+    if name and item_num:
+        if db.add_slot(item_num, name, capacity, home_stock):
+            flash(f'"{name}" added.', 'success')
+        else:
+            flash(f'Slot #{item_num} already exists.', 'error')
+    return redirect(url_for('products'))
+
+
+@app.route('/products/delete', methods=['POST'])
+@login_required
+def delete_product():
+    name = request.form.get('name', '').strip()
+    if name:
+        if db.delete_product(name):
+            flash(f'"{name}" removed.', 'success')
+        else:
+            flash(f'Cannot remove "{name}" — it has sales history. Rename it instead.', 'error')
+    return redirect(url_for('products'))
+
+
 # ---------------------------------------------------------------------------
 # Settings
 # ---------------------------------------------------------------------------

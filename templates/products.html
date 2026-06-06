@@ -19,9 +19,9 @@
     font-size: 20px; font-weight: 700; color: var(--accent);
     min-width: 32px; text-align: right;
   }
-  .chevron { color: var(--muted); font-size: 18px; }
+  .chevron { color: var(--muted); font-size: 18px; transition: transform .2s; }
+  .chevron.open { transform: rotate(90deg); }
 
-  /* Edit form (inline expand) */
   .edit-form {
     display: none;
     background: var(--bg);
@@ -35,12 +35,41 @@
 
 {% block content %}
 <div class="page">
-  <div class="page-title">Products</div>
-  <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
-    Home stock is shared across all slots with the same product name.
-    Tap a product to rename it or update stock.
-  </p>
+  <div class="flex justify-between items-center" style="margin-bottom:16px">
+    <div class="page-title" style="margin:0">Products</div>
+    <button class="btn btn-primary btn-sm" onclick="toggleAdd()">+ Add</button>
+  </div>
 
+  <!-- Add product form -->
+  <div class="edit-form" id="add-form" style="margin-bottom:12px">
+    <div class="card-title">New Product</div>
+    <form method="POST" action="{{ url_for('add_product') }}">
+      <div class="form-group">
+        <label>Product name</label>
+        <input type="text" name="name" placeholder="e.g. Doritos" required>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label>Slot # (e.g. 0121)</label>
+          <input type="text" name="item_num" placeholder="0121" maxlength="4" required>
+        </div>
+        <div class="form-group">
+          <label>Capacity</label>
+          <input type="number" name="capacity" value="7" min="1" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Home stock</label>
+        <input type="number" name="home_stock" value="0" min="0">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button type="submit" class="btn btn-success" style="flex:1">Add product</button>
+        <button type="button" class="btn btn-outline" style="flex:1" onclick="toggleAdd()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Product list -->
   <div class="card">
     {% for p in products %}
     <div>
@@ -52,11 +81,11 @@
           </div>
         </div>
         <div class="home-stock">{{ p.home_stock }}</div>
-        <div class="chevron">›</div>
+        <div class="chevron" id="chevron-{{ loop.index }}">›</div>
       </div>
 
       <div class="edit-form" id="edit-{{ loop.index }}">
-        <form method="POST" action="{{ url_for('update_product') }}">
+        <form method="POST" action="{{ url_for('update_product') }}" style="margin-bottom:12px">
           <input type="hidden" name="original_name" value="{{ p.name }}">
           <div class="form-group">
             <label>Product name</label>
@@ -72,6 +101,20 @@
                     onclick="toggleEdit('{{ loop.index }}')">Cancel</button>
           </div>
         </form>
+
+        <!-- Delete -->
+        <form method="POST" action="{{ url_for('delete_product') }}"
+              onsubmit="return confirm('Remove {{ p.name }}? This cannot be undone.')">
+          <input type="hidden" name="name" value="{{ p.name }}">
+          <button type="submit" class="btn btn-danger btn-block btn-sm">
+            Remove "{{ p.name }}"
+          </button>
+        </form>
+        {% if p.slot_count > 0 %}
+        <p style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center">
+          Note: products with sales history cannot be deleted — rename instead.
+        </p>
+        {% endif %}
       </div>
     </div>
     {% endfor %}
@@ -80,8 +123,13 @@
 
 <script>
   function toggleEdit(id) {
-    const el = document.getElementById('edit-' + id);
-    el.classList.toggle('open');
+    const form    = document.getElementById('edit-' + id);
+    const chevron = document.getElementById('chevron-' + id);
+    form.classList.toggle('open');
+    chevron.classList.toggle('open');
+  }
+  function toggleAdd() {
+    document.getElementById('add-form').classList.toggle('open');
   }
 </script>
 {% endblock %}
