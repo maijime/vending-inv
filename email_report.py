@@ -20,7 +20,7 @@ MACHINE_ORDER = [
 def build_report():
     today        = datetime.now().strftime('%Y-%m-%d')
     yesterday    = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-    last_restock = db.get_setting('last_restock_date') or '2000-01-01'
+    week_start   = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
     threshold    = int(db.get_setting('low_stock_threshold') or 3)
 
     slots        = db.get_slots_with_levels()
@@ -28,7 +28,7 @@ def build_report():
 
     today_sum     = db.get_sales_summary(today, today)
     yesterday_sum = db.get_sales_summary(yesterday, yesterday)
-    restock_sum   = db.get_sales_summary(last_restock, today)
+    week_sum      = db.get_sales_summary(week_start, today)
 
     low_slots = [s for s in slots if s['current_level'] < threshold]
 
@@ -113,9 +113,9 @@ def build_report():
   <!-- Stats -->
   <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;table-layout:fixed">
     <tr>
-      {stat_card('Today',            today_sum['total_revenue'] or 0,     today_sum['total_profit'] or 0,     today_sum['total_items'] or 0)}
-      {stat_card('Yesterday',        yesterday_sum['total_revenue'] or 0, yesterday_sum['total_profit'] or 0, yesterday_sum['total_items'] or 0)}
-      {stat_card(f'Since {last_restock}', restock_sum['total_revenue'] or 0,  restock_sum['total_profit'] or 0,  restock_sum['total_items'] or 0)}
+      {stat_card('Today',     today_sum['total_revenue'] or 0,     today_sum['total_profit'] or 0,     today_sum['total_items'] or 0)}
+      {stat_card('Yesterday', yesterday_sum['total_revenue'] or 0, yesterday_sum['total_profit'] or 0, yesterday_sum['total_items'] or 0)}
+      {stat_card('This Week', week_sum['total_revenue'] or 0,      week_sum['total_profit'] or 0,      week_sum['total_items'] or 0)}
     </tr>
   </table>
 
