@@ -305,13 +305,19 @@
     const fillLabel = d.last_fill_date ? 'Last filled ' + d.last_fill_date : 'Never filled';
 
     const pickerItems = d.products.map(p =>
-      `<div onclick="swapProduct('${d.item_num}','${p.name.replace(/'/g,"\\'")}')"
+      `<div id="pick-${p.name.replace(/[^a-zA-Z0-9]/g,'_')}"
+            onclick="selectProduct('${p.name.replace(/'/g,"\\'")}')"
             style="padding:10px 12px;border-radius:8px;cursor:pointer;
                    display:flex;justify-content:space-between;align-items:center;
-                   background:${p.name===d.name ? 'var(--border)' : 'transparent'};
+                   background:${p.name===d.name ? 'var(--accent)' : 'transparent'};
                    margin-bottom:4px">
-         <span style="font-weight:${p.name===d.name ? '700' : '400'}">${p.name}</span>
-         <span style="font-size:12px;color:var(--muted)">${p.home_stock} at home</span>
+         <span style="font-weight:${p.name===d.name ? '700' : '400'};
+                      color:${p.name===d.name ? '#fff' : 'var(--text)'}">
+           ${p.name}${p.name===d.name ? ' ✓' : ''}
+         </span>
+         <span style="font-size:12px;color:${p.name===d.name ? 'rgba(255,255,255,.7)' : 'var(--muted)'}">
+           ${p.home_stock} at home
+         </span>
        </div>`
     ).join('');
 
@@ -402,29 +408,53 @@
     const qty  = parseInt(document.getElementById('fillQty').value);
     const date = document.getElementById('fillDate').value;
     if (isNaN(qty) || qty < 0) { alert('Enter a valid quantity.'); return; }
-    fetch('/api/slot/' + itemNum + '/fill', {
-      method:  'POST',
-      headers: {'Content-Type': 'application/json'},
-      body:    JSON.stringify({ qty, date }),
-    }).then(() => { closeModal(); location.reload(); });
+
+    const selectedName = _slotData._selectedName || _slotData.name;
+    const needsSwap    = selectedName !== _slotData.name;
+
+    const doFill = () =>
+      fetch('/api/slot/' + itemNum + '/fill', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ qty, date }),
+      }).then(() => { closeModal(); location.reload(); });
+
+    if (needsSwap) {
+      fetch('/api/slot/' + itemNum + '/swap', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name: selectedName }),
+      }).then(doFill);
+    } else {
+      doFill();
+    }
   }
 
   function toggleSwap() {
     const panel   = document.getElementById('swapPanel');
     const chevron = document.getElementById('swapChevron');
     const open    = panel.style.display === 'none';
-    panel.style.display   = open ? 'block' : 'none';
+    panel.style.display     = open ? 'block' : 'none';
     chevron.style.transform = open ? 'rotate(90deg)' : '';
   }
 
-  function swapProduct(itemNum, newName) {
-    if (_slotData && newName === _slotData.name) return;
-    if (!confirm('Swap this slot to ' + newName + '?')) return;
-    fetch('/api/slot/' + itemNum + '/swap', {
-      method:  'POST',
-      headers: {'Content-Type': 'application/json'},
-      body:    JSON.stringify({ name: newName }),
-    }).then(() => { closeModal(); location.reload(); });
+  function selectProduct(name) {
+    if (!_slotData) return;
+    _slotData._selectedName = name;
+    // Re-highlight all rows
+    _slotData.products.forEach(p => {
+      const id  = 'pick-' + p.name.replace(/[^a-zA-Z0-9]/g, '_');
+      const el  = document.getElementById(id);
+      if (!el) return;
+      const sel = p.name === name;
+      el.style.background = sel ? 'var(--accent)' : 'transparent';
+      const nameEl  = el.querySelector('span:first-child');
+      const stockEl = el.querySelector('span:last-child');
+      nameEl.style.fontWeight = sel ? '700' : '400';
+      nameEl.style.color      = sel ? '#fff' : 'var(--text)';
+      nameEl.textContent      = p.name + (sel ? ' ✓' : '');
+      stockEl.style.color     = sel ? 'rgba(255,255,255,.7)' : 'var(--muted)';
+    });
+    // Update modal title preview
+    document.getElementById('modalTitle').textContent = name + ' · ' + _slotData.item_num;
   }
 </script>
 
