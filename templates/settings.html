@@ -1,76 +1,52 @@
 {% extends "base.html" %}
-{% block header_title %}⚙️ Settings{% endblock %}
+{% block title %}Settings{% endblock %}
 
 {% block content %}
-<div class="card-header">Alerts</div>
-<div class="card">
+<div class="page">
+  <div class="page-title">Settings</div>
+
+  <!-- Low stock threshold -->
+  <div class="card">
+    <div class="card-title">Low Stock Alert</div>
     <form method="POST">
-        <div class="form-field">
-            <label>Low Stock Threshold</label>
-            <input type="number" name="low_stock_threshold" value="{{ low_stock_threshold }}" min="1" max="20">
-        </div>
-        <div class="form-field">
-            <label>Last Restock Date</label>
-            <input type="date" name="last_restock_date" value="{{ last_restock_date or '' }}">
-        </div>
-        <div class="btn-row">
-            <button type="submit" class="btn btn-full">Save Settings</button>
-        </div>
+      <input type="hidden" name="action" value="threshold">
+      <div class="form-group">
+        <label>Alert when slot drops below</label>
+        <input type="number" name="low_stock_threshold"
+               value="{{ low_stock_threshold or 3 }}" min="1" max="20">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Save</button>
     </form>
-</div>
+  </div>
 
-<div class="card-header">Email Reports</div>
-<div class="card">
-    <div class="list-row">
-        <span class="list-row-label">Status</span>
-        {% if gmail_configured %}
-            <span class="badge badge-green">Configured</span>
-        {% else %}
-            <span class="badge badge-red">Not Set Up</span>
-        {% endif %}
+  <!-- Info -->
+  <div class="card">
+    <div class="card-title">Info</div>
+    <div style="font-size:14px;color:var(--muted);line-height:1.8">
+      <div>Last restock: <span style="color:var(--text)">{{ last_restock_date or '—' }}</span></div>
+      <div>Logged in as: <span style="color:var(--text)">{{ admin_user }}</span></div>
     </div>
-    <div class="list-row">
-        <span class="list-row-label">Schedule</span>
-        <span class="list-row-value">Daily 4:15 PM</span>
-    </div>
-    <div class="list-row">
-        <span class="list-row-label">Condition</span>
-        <span class="list-row-value">Only if sales > 0</span>
-    </div>
-    {% if not gmail_configured %}
-    <div class="card-body">
-        <div class="banner banner-warn" style="margin:0;">
-            Set up Gmail App Password in .env file. See EMAIL_SETUP.md for instructions.
-        </div>
-    </div>
-    {% endif %}
-</div>
+  </div>
 
-<div class="card-header">System</div>
-<div class="card">
-    <div class="list-row">
-        <span class="list-row-label">Version</span>
-        <span class="list-row-value">2.1</span>
-    </div>
-    <div class="list-row">
-        <span class="list-row-label">Database</span>
-        <span class="list-row-value">vending.db</span>
-    </div>
-    <div class="list-row">
-        <span class="list-row-label">Items</span>
-        <span class="list-row-value">{{ item_count }} slots · {{ product_count }} products</span>
-    </div>
-    <a href="/health" class="list-row" style="text-decoration:none; color:var(--text);">
-        <span class="list-row-label">Health Check</span>
-        <span class="list-row-value blue">→</span>
-    </a>
-</div>
+  <!-- Change credentials -->
+  <div class="card">
+    <div class="card-title">Change Login</div>
+    <form method="POST">
+      <input type="hidden" name="action" value="password">
+      <div class="form-group">
+        <label>New username</label>
+        <input type="text" name="username" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>New password</label>
+        <input type="password" name="password" autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn btn-outline btn-block">Update credentials</button>
+    </form>
+  </div>
 
-<div class="card-header">Data</div>
-<div class="card">
-    <a href="/api/export-csv" class="list-row" style="text-decoration:none; color:var(--text);">
-        <span class="list-row-label">⬇ Export All Sales (CSV)</span>
-        <span class="list-row-value blue">→</span>
-    </a>
+  <!-- Logout -->
+  <a href="{{ url_for('logout') }}" class="btn btn-danger btn-block">Log out</a>
+
 </div>
 {% endblock %}

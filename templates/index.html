@@ -1,159 +1,166 @@
 {% extends "base.html" %}
-{% block header_title %}💪 Dashboard{% endblock %}
-{% block header_sub %}<div class="header-sub">{{ greeting }}</div>{% endblock %}
+{% block title %}Machine{% endblock %}
 
-{% block content %}
-{% if restock_summary %}
-<div class="card-header">Since Last Restock · {{ restock_summary.start_date }}</div>
-<div class="card">
-    <div class="metrics">
-        <div class="metric">
-            <div class="metric-value">${{ "%.2f"|format(restock_summary.total_revenue or 0) }}</div>
-            <div class="metric-label">Revenue</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value green">${{ "%.2f"|format(restock_summary.total_profit or 0) }}</div>
-            <div class="metric-label">Profit</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value">{{ restock_summary.total_items or 0 }}</div>
-            <div class="metric-label">Items Sold</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value {% if low_stock_count > 0 %}red{% endif %}">{{ low_stock_count }}</div>
-            <div class="metric-label">Low Stock</div>
-        </div>
-    </div>
-</div>
-{% endif %}
+{% block head %}
+<style>
+  /* ── Machine visual ── */
+  .machine-section { margin-bottom: 20px; }
+  .section-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--muted);
+    margin-bottom: 8px;
+  }
 
-<div class="card-header">Revenue {{ 'Since Restock' if restock_summary else '(30 Days)' }}</div>
-<div class="card">
-    <div class="chart-container">
-        <canvas id="revenueChart"></canvas>
-    </div>
-</div>
+  /* Snack rows */
+  .snack-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .slot-card {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, transform .1s;
+    position: relative;
+    min-width: 0;
+  }
+  .slot-card:active { transform: scale(.96); }
+  .slot-card.low    { border-color: var(--red); }
+  .slot-card.mid    { border-color: var(--yellow); }
+  .slot-card.ok     { border-color: var(--green); }
 
-<div class="card-header">Today · <span id="todayTime" style="font-weight:400;"></span></div>
-<div class="card">
-    <div class="metrics" id="todayMetrics">
-        <div class="metric">
-            <div class="metric-value" id="todayRev">—</div>
-            <div class="metric-label">Revenue</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value green" id="todayProfit">—</div>
-            <div class="metric-label">Profit</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value" id="todayItems">—</div>
-            <div class="metric-label">Items</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value" id="todayMargin">—</div>
-            <div class="metric-label">Margin</div>
-        </div>
-    </div>
-    <div id="todayStatus" style="padding:4px 16px 10px; font-size:12px; color:var(--text2); text-align:center;"></div>
-</div>
+  .slot-name {
+    font-size: 11px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 6px;
+  }
+  .slot-level {
+    font-size: 18px; font-weight: 700;
+    line-height: 1;
+  }
+  .slot-cap { font-size: 10px; color: var(--muted); }
 
-<!-- Machine Stock Levels -->
-<div class="card-header">Machine Stock</div>
-<div class="card">
-    {% for slot in machine_slots %}
-    <div class="list-row" style="padding:8px 16px;">
-        <div>
-            <span style="font-size:14px;">{{ slot.product_name }}</span>
-            <span style="font-size:11px; color:var(--text2);"> #{{ slot.item_num }}</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:12px; color:var(--text2);">${{ "%.2f"|format(slot.revenue) }}</span>
-            <span style="font-size:14px; min-width:40px; text-align:right;">{{ slot.current_level }}/{{ slot.capacity }}</span>
-            {% if slot.current_level == 0 %}
-            <span class="badge badge-red">Empty</span>
-            {% elif slot.current_level < low_stock_threshold %}
-            <span class="badge badge-red">Low</span>
-            {% endif %}
-        </div>
-    </div>
-    {% endfor %}
-</div>
+  /* Fill bar inside slot */
+  .slot-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 7px;
+    overflow: hidden;
+  }
+  .slot-bar-fill { height: 100%; border-radius: 2px; }
 
-{% if week_comparison %}
-<div class="card-header">This Week vs Last Week</div>
-<div class="card">
-    <div class="list-row">
-        <span class="list-row-label">This Week</span>
-        <span class="list-row-value">${{ "%.2f"|format(week_comparison.this_week) }}</span>
-    </div>
-    <div class="list-row">
-        <span class="list-row-label">Last Week</span>
-        <span class="list-row-value">${{ "%.2f"|format(week_comparison.last_week) }}</span>
-    </div>
-    <div class="list-row">
-        <span class="list-row-label">Change</span>
-        {% set change = week_comparison.this_week - week_comparison.last_week %}
-        <span class="list-row-value {% if change >= 0 %}green{% else %}red{% endif %}">
-            {{ "+" if change >= 0 }}${{ "%.2f"|format(change) }}
-        </span>
-    </div>
-    {% if best_day %}
-    <div class="list-row">
-        <span class="list-row-label">💡 Best Day</span>
-        <span class="list-row-value">{{ best_day.day_name }}s · avg ${{ best_day.avg_revenue }}</span>
-    </div>
-    {% endif %}
-</div>
-{% endif %}
+  /* Drinks row — horizontal scrollable chips */
+  .drinks-row {
+    display: flex; gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .drinks-row::-webkit-scrollbar { display: none; }
+  .drink-card {
+    flex: 0 0 auto;
+    width: 88px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, transform .1s;
+  }
+  .drink-card:active { transform: scale(.96); }
+  .drink-card.low  { border-color: var(--red); }
+  .drink-card.mid  { border-color: var(--yellow); }
+  .drink-card.ok   { border-color: var(--green); }
+  .drink-name { font-size: 11px; font-weight: 600; margin-bottom: 5px; }
+  .drink-level { font-size: 20px; font-weight: 700; }
+  .drink-cap { font-size: 10px; color: var(--muted); }
+
+  /* Alert chip */
+  .alert-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #450a0a; color: #fca5a5;
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 12px; font-weight: 600;
+    margin-bottom: 14px;
+  }
+  .alert-chip svg { width: 13px; height: 13px; }
+</style>
 {% endblock %}
 
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-<script>
-fetch('/api/sales-chart?start_date={{ restock_summary.start_date if restock_summary else "" }}')
-    .then(r => r.json())
-    .then(data => {
-        if (!data.length) return;
-        new Chart(document.getElementById('revenueChart'), {
-            type: 'bar',
-            data: {
-                labels: data.map(d => {
-                    const dt = new Date(d.date + 'T12:00:00');
-                    return dt.toLocaleDateString('en-US', {month:'short', day:'numeric'});
-                }),
-                datasets: [{
-                    data: data.map(d => d.revenue),
-                    backgroundColor: 'rgba(0,122,255,0.6)',
-                    borderRadius: 4, borderSkipped: false,
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 7 } },
-                    y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 }, callback: v => '$' + v } }
-                }
-            }
-        });
-    });
+{% block content %}
+<div class="page">
 
-function loadToday() {
-    fetch('/api/today')
-        .then(r => r.json())
-        .then(d => {
-            document.getElementById('todayRev').textContent = '$' + d.revenue.toFixed(2);
-            document.getElementById('todayProfit').textContent = '$' + d.profit.toFixed(2);
-            document.getElementById('todayItems').textContent = d.items;
-            document.getElementById('todayMargin').textContent = d.items > 0 ? Math.round(d.profit / d.revenue * 100) + '%' : '—';
-            document.getElementById('todayTime').textContent = d.as_of;
-            document.getElementById('todayStatus').textContent = d.items > 0 ? '' : 'No sales recorded yet';
-        })
-        .catch(() => {
-            document.getElementById('todayStatus').textContent = 'Waiting for data';
-        });
-}
-loadToday();
-setInterval(loadToday, 3600000);
-</script>
+  <!-- Summary -->
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="val">${{ '%.2f'|format(summary.total_revenue or 0) }}</div>
+      <div class="lbl">Revenue{% if last_restock %} since {{ last_restock }}{% endif %}</div>
+    </div>
+    <div class="summary-card">
+      <div class="val">${{ '%.2f'|format(summary.total_profit or 0) }}</div>
+      <div class="lbl">Profit</div>
+    </div>
+    <div class="summary-card">
+      <div class="val">{{ summary.total_items or 0 }}</div>
+      <div class="lbl">Items sold</div>
+    </div>
+  </div>
+
+  {% if low_count > 0 %}
+  <div class="alert-chip">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    {{ low_count }} slot{{ 's' if low_count != 1 }} low
+  </div>
+  {% endif %}
+
+  <!-- Snack machine -->
+  <div class="machine-section">
+    {% for row in machine.snacks %}
+      <div class="section-label">{{ row.label }}</div>
+      <div class="snack-row">
+        {% for slot in row.slots %}
+          {% set pct = (slot.current_level / slot.capacity * 100)|int %}
+          {% set cls = 'ok' if pct > 50 else ('mid' if pct > 20 else 'low') %}
+          {% set col = 'var(--green)' if pct > 50 else ('var(--yellow)' if pct > 20 else 'var(--red)') %}
+          <div class="slot-card {{ cls }}" onclick="openSlot('{{ slot.item_num }}')">
+            <div class="slot-name">{{ slot.name }}</div>
+            <div class="slot-level" style="color:{{ col }}">{{ slot.current_level }}</div>
+            <div class="slot-cap">/ {{ slot.capacity }}</div>
+            <div class="slot-bar">
+              <div class="slot-bar-fill" style="width:{{ pct }}%;background:{{ col }}"></div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Drinks unit -->
+  <div class="machine-section">
+    <div class="section-label">Drinks</div>
+    <div class="drinks-row">
+      {% for slot in machine.drinks %}
+        {% set pct = (slot.current_level / slot.capacity * 100)|int %}
+        {% set cls = 'ok' if pct > 50 else ('mid' if pct > 20 else 'low') %}
+        {% set col = 'var(--green)' if pct > 50 else ('var(--yellow)' if pct > 20 else 'var(--red)') %}
+        <div class="drink-card {{ cls }}" onclick="openSlot('{{ slot.item_num }}')">
+          <div class="drink-name">{{ slot.name }}</div>
+          <div class="drink-level" style="color:{{ col }}">{{ slot.current_level }}</div>
+          <div class="drink-cap">/ {{ slot.capacity }}</div>
+          <div class="slot-bar" style="margin-top:6px">
+            <div class="slot-bar-fill" style="width:{{ pct }}%;background:{{ col }}"></div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
 {% endblock %}

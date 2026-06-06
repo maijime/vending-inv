@@ -1,63 +1,105 @@
 {% extends "base.html" %}
-{% block header_title %}🔄 Restock{% endblock %}
+{% block title %}Restock{% endblock %}
 
-{% block content %}
-<div class="card-header">Restock Machine</div>
-<div class="card">
-    <form method="POST" id="restockForm">
-        <input type="hidden" name="action" value="restock_machine">
-        <div class="form-field">
-            <label>Date</label>
-            <input type="date" name="date" value="{{ today }}" required>
-        </div>
+{% block head %}
+<style>
+  .restock-slot {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .restock-slot:last-child { border-bottom: none; }
 
-        {% set ns = namespace(current_row='') %}
-        {% for slot in slots %}
-        {% set row = slot.item_num[:3] %}
-        {% if row != ns.current_row %}
-        {% set ns.current_row = row %}
-        <div class="list-row" style="background:var(--bg); font-size:12px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px;">
-            Row {{ row }}
-        </div>
-        {% endif %}
-        <div class="form-field">
-            <div>
-                <div style="font-size:15px;">{{ slot.product_name }}</div>
-                <div style="font-size:12px; color:var(--text2);">
-                    #{{ slot.item_num }} · {{ slot.current_level }}/{{ slot.capacity }}
-                    {% if slot.need > 0 %} · <span style="color:var(--orange);">Need {{ slot.need }}</span>{% endif %}
-                    · Stock: {{ slot.home_qty }}
-                </div>
-            </div>
-            <input type="number" name="slot_{{ slot.item_num }}" class="restock-input"
-                   min="0" max="{{ slot.capacity }}" placeholder="{{ slot.current_level }}"
-                   data-capacity="{{ slot.capacity }}"
-                   style="width:60px;">
-        </div>
-        {% endfor %}
+  .slot-info { flex: 1; min-width: 0; }
+  .slot-info .name { font-weight: 600; font-size: 14px; }
+  .slot-info .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
-        <div class="btn-row" style="flex-direction:column; gap:8px;">
-            <button type="button" onclick="fillAll()" class="btn btn-full btn-secondary">Fill All to Capacity</button>
-            <button type="submit" class="btn btn-full">Save Restock</button>
-        </div>
-    </form>
-</div>
+  .level-badge {
+    font-size: 12px; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    white-space: nowrap;
+  }
+  .level-ok  { background: #14532d; color: #86efac; }
+  .level-mid { background: #422006; color: #fde68a; }
+  .level-low { background: #450a0a; color: #fca5a5; }
 
-<div class="card-header">How It Works</div>
-<div class="card">
-    <div class="card-body" style="font-size:14px; color:var(--text2); line-height:1.5;">
-        Enter the <strong style="color:var(--text);">new level</strong> for each slot after restocking.
-        Items added are automatically deducted from that product's stock.
-    </div>
-</div>
+  .qty-input {
+    width: 70px !important;
+    text-align: center;
+    font-weight: 700;
+    padding: 8px 6px !important;
+  }
+</style>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-function fillAll() {
-    document.querySelectorAll('.restock-input').forEach(input => {
-        input.value = input.dataset.capacity;
-    });
-}
-</script>
+{% block content %}
+<div class="page">
+  <div class="flex justify-between items-center" style="margin-bottom:16px">
+    <div class="page-title" style="margin:0">Restock</div>
+    {% if last_restock %}
+    <div style="font-size:12px;color:var(--muted)">Last: {{ last_restock.date }}</div>
+    {% endif %}
+  </div>
+
+  <form method="POST">
+    <!-- Date & notes -->
+    <div class="card">
+      <div class="form-group">
+        <label>Restock date</label>
+        <input type="date" name="date" value="{{ today }}" required>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label>Notes (optional)</label>
+        <input type="text" name="notes" placeholder="e.g. short on Kinder, skipped 0131">
+      </div>
+    </div>
+
+    <!-- Snack slots -->
+    {% for row in machine.snacks %}
+    <div class="card">
+      <div class="card-title">{{ row.label }}</div>
+      {% for slot in row.slots %}
+        {% set pct = (slot.current_level / slot.capacity * 100)|int %}
+        {% set badge = 'level-ok' if pct > 50 else ('level-mid' if pct > 20 else 'level-low') %}
+        <div class="restock-slot">
+          <div class="slot-info">
+            <div class="name">{{ slot.name }}</div>
+            <div class="meta">{{ slot.item_num }} &middot; cap {{ slot.capacity }} &middot; home {{ slot.home_stock }}</div>
+          </div>
+          <span class="level-badge {{ badge }}">{{ slot.current_level }}/{{ slot.capacity }}</span>
+          <input class="qty-input" type="number" name="slot_{{ slot.item_num }}"
+                 min="0" max="{{ slot.capacity }}" placeholder="fill">
+        </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+    <!-- Drink slots -->
+    <div class="card">
+      <div class="card-title">Drinks</div>
+      {% for slot in machine.drinks %}
+        {% set pct = (slot.current_level / slot.capacity * 100)|int %}
+        {% set badge = 'level-ok' if pct > 50 else ('level-mid' if pct > 20 else 'level-low') %}
+        <div class="restock-slot">
+          <div class="slot-info">
+            <div class="name">{{ slot.name }}</div>
+            <div class="meta">{{ slot.item_num }} &middot; cap {{ slot.capacity }} &middot; home {{ slot.home_stock }}</div>
+          </div>
+          <span class="level-badge {{ badge }}">{{ slot.current_level }}/{{ slot.capacity }}</span>
+          <input class="qty-input" type="number" name="slot_{{ slot.item_num }}"
+                 min="0" max="{{ slot.capacity }}" placeholder="fill">
+        </div>
+      {% endfor %}
+    </div>
+
+    <button type="submit" class="btn btn-success btn-block" style="margin-bottom:8px">
+      Save Restock
+    </button>
+    <p style="font-size:12px;color:var(--muted);text-align:center">
+      Only fill in slots you actually restocked. Leave blank to skip.
+    </p>
+  </form>
+</div>
 {% endblock %}
