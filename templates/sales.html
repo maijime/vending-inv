@@ -3,12 +3,40 @@
 
 {% block head %}
 <style>
-  /* Hide profit column on small screens */
-  @media (max-width: 480px) {
-    .col-profit { display: none; }
-    .col-revenue { font-size: 13px; }
+  .sales-row {
+    display: flex; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    gap: 8px;
   }
-  .table td, .table th { padding: 10px 6px; }
+  .sales-row:last-child { border-bottom: none; }
+  .sales-row .name { flex: 1; font-size: 14px; font-weight: 500; min-width: 0;
+                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sales-row .sold { font-size: 13px; color: var(--muted); width: 32px; text-align: right; }
+  .sales-row .rev  { font-size: 14px; font-weight: 600; color: var(--green);
+                     width: 64px; text-align: right; }
+  .sales-row .pft  { font-size: 13px; color: var(--muted); width: 60px; text-align: right; }
+
+  .day-row {
+    display: flex; align-items: center;
+    padding: 9px 0; border-bottom: 1px solid var(--border); gap: 8px;
+  }
+  .day-row:last-child { border-bottom: none; }
+  .day-row .date { flex: 1; font-size: 13px; color: var(--muted); }
+  .day-row .items { font-size: 13px; color: var(--muted); width: 32px; text-align: right; }
+  .day-row .rev   { font-size: 14px; font-weight: 600; width: 64px; text-align: right; }
+  .day-row .pft   { font-size: 13px; color: var(--green); width: 60px; text-align: right; }
+
+  .col-header {
+    display: flex; gap: 8px;
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--muted);
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+    margin-bottom: 2px;
+  }
+  .col-header .h-name { flex: 1; }
+  .col-header .h-sold { width: 32px; text-align: right; }
+  .col-header .h-rev  { width: 64px; text-align: right; }
+  .col-header .h-pft  { width: 60px; text-align: right; }
 </style>
 {% endblock %}
 
@@ -55,26 +83,20 @@
   {% if by_item %}
   <div class="card">
     <div class="card-title">By Item</div>
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Item</th>
-          <th class="text-right">Sold</th>
-          <th class="text-right">Revenue</th>
-          <th class="text-right col-profit">Profit</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in by_item %}
-        <tr>
-          <td style="font-weight:500">{{ item.name or item.item_num }}</td>
-          <td class="text-right" style="color:var(--muted)">{{ item.total_sold }}</td>
-          <td class="text-right text-green col-revenue">${{ '%.2f'|format(item.total_revenue) }}</td>
-          <td class="text-right text-green col-profit">${{ '%.2f'|format(item.total_profit) }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="col-header">
+      <span class="h-name">Item</span>
+      <span class="h-sold">Sold</span>
+      <span class="h-rev">Revenue</span>
+      <span class="h-pft">Profit</span>
+    </div>
+    {% for item in by_item %}
+    <div class="sales-row">
+      <span class="name">{{ item.name or item.item_num }}</span>
+      <span class="sold">{{ item.total_sold }}</span>
+      <span class="rev">${{ '%.2f'|format(item.total_revenue) }}</span>
+      <span class="pft">${{ '%.2f'|format(item.total_profit) }}</span>
+    </div>
+    {% endfor %}
   </div>
   {% endif %}
 
@@ -82,26 +104,20 @@
   {% if daily_sales %}
   <div class="card">
     <div class="card-title">Daily Breakdown</div>
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th class="text-right">Items</th>
-          <th class="text-right">Revenue</th>
-          <th class="text-right col-profit">Profit</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for day in daily_sales %}
-        <tr>
-          <td style="font-size:13px">{{ day.date }}</td>
-          <td class="text-right" style="color:var(--muted)">{{ day.items_sold }}</td>
-          <td class="text-right">${{ '%.2f'|format(day.revenue) }}</td>
-          <td class="text-right text-green col-profit">${{ '%.2f'|format(day.profit) }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="col-header">
+      <span class="h-name">Date</span>
+      <span class="h-sold">Items</span>
+      <span class="h-rev">Revenue</span>
+      <span class="h-pft">Profit</span>
+    </div>
+    {% for day in daily_sales %}
+    <div class="day-row">
+      <span class="date">{{ day.date }}</span>
+      <span class="items">{{ day.items_sold }}</span>
+      <span class="rev">${{ '%.2f'|format(day.revenue) }}</span>
+      <span class="pft">${{ '%.2f'|format(day.profit) }}</span>
+    </div>
+    {% endfor %}
   </div>
   {% else %}
   <div class="card" style="text-align:center;color:var(--muted);padding:32px">
