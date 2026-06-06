@@ -81,42 +81,10 @@
     /* ── Page ── */
     .page { padding: 16px; max-width: 680px; margin: 0 auto; }
 
-    /* ── Desktop layout: full-height left sidebar ── */
+    /* ── Desktop: wider content, same top nav ── */
     @media (min-width: 768px) {
-      :root { --sidebar-w: 200px; }
-      body { padding-top: 0; padding-left: var(--sidebar-w); }
-
-      /* Top bar becomes the sidebar header strip */
-      nav {
-        top: 0; left: 0; bottom: 0; right: auto;
-        width: var(--sidebar-w); height: 100vh;
-        flex-direction: column; align-items: flex-start;
-        justify-content: flex-start;
-        border-bottom: none; border-right: 1px solid var(--border);
-        padding: 20px 8px 16px; gap: 0;
-      }
-      .nav-title {
-        font-size: 17px; font-weight: 700;
-        padding: 4px 12px 18px;
-        border-bottom: 1px solid var(--border);
-        width: 100%; flex: none; margin-bottom: 8px;
-      }
-      .nav-menu-btn { display: none; }
-      .nav-current  { display: none; }
-
-      /* Links render inside the sidebar */
-      .nav-dropdown {
-        position: static !important;
-        display: flex !important; flex-direction: column;
-        background: none; border: none; border-radius: 0;
-        padding: 0; box-shadow: none; min-width: unset;
-        width: 100%;
-      }
-      .nav-dropdown a {
-        border-radius: 8px; font-size: 14px;
-        padding: 10px 12px;
-      }
-      .page { padding: 24px 32px; max-width: 860px; }
+      .page { padding: 24px 40px; max-width: 960px; }
+      .nav-dropdown { right: 16px; min-width: 200px; }
     }
 
     /* ── Cards ── */
