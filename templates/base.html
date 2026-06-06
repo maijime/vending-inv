@@ -26,10 +26,11 @@
       color: var(--text);
       font-size: 15px;
       line-height: 1.5;
-      padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+      /* mobile: pad bottom for nav bar */
+      padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 8px);
     }
 
-    /* ── Bottom nav ── */
+    /* ── Bottom nav (mobile) ── */
     nav {
       position: fixed; bottom: 0; left: 0; right: 0;
       height: var(--nav-h);
@@ -49,7 +50,54 @@
     nav a svg { width: 22px; height: 22px; }
 
     /* ── Page ── */
-    .page { padding: 16px; max-width: 600px; margin: 0 auto; }
+    .page { padding: 16px; max-width: 680px; margin: 0 auto; }
+
+    /* ── Desktop layout: left sidebar nav ── */
+    @media (min-width: 768px) {
+      :root { --sidebar-w: 200px; }
+      body {
+        padding-bottom: 0;
+        padding-left: var(--sidebar-w);
+      }
+      nav {
+        top: 0; bottom: 0; left: 0; right: auto;
+        width: var(--sidebar-w);
+        height: 100vh;
+        flex-direction: column;
+        border-top: none;
+        border-right: 1px solid var(--border);
+        padding-bottom: 0;
+        padding-top: 24px;
+        justify-content: flex-start;
+        gap: 4px;
+      }
+      nav::before {
+        content: 'Vending';
+        display: block;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        padding: 0 20px 24px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 8px;
+        width: 100%;
+      }
+      nav a {
+        flex: none;
+        flex-direction: row;
+        justify-content: flex-start;
+        width: 100%;
+        padding: 10px 20px;
+        font-size: 14px;
+        gap: 12px;
+        border-radius: 8px;
+        margin: 0 8px;
+        width: calc(100% - 16px);
+      }
+      nav a svg { width: 20px; height: 20px; flex-shrink: 0; }
+      nav a.active { background: rgba(59,130,246,.15); color: var(--accent); }
+      .page { padding: 24px 32px; max-width: 860px; }
+    }
 
     /* ── Cards ── */
     .card {
