@@ -139,8 +139,8 @@ def reset_password():
 
 MACHINE_LAYOUT = {
     'snacks': [
-        {'label': 'Row 1 — Chips',        'slots': ['0111','0113','0115','0117']},
-        {'label': 'Row 2 — Chips',        'slots': ['0121','0123','0125','0127']},
+        {'label': 'Row 1 — Snacks',        'slots': ['0111','0113','0115','0117']},
+        {'label': 'Row 2 — Snacks',        'slots': ['0121','0123','0125','0127']},
         {'label': 'Row 3 — Small Snacks', 'slots': ['0130','0131','0132','0133',
                                                      '0134','0135','0136','0137']},
     ],
