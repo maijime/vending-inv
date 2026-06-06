@@ -81,17 +81,20 @@
     /* ── Page ── */
     .page { padding: 16px; max-width: 680px; margin: 0 auto; }
 
-    /* ── Desktop layout: left sidebar nav ── */
+    /* ── Desktop layout: left sidebar ── */
     @media (min-width: 768px) {
       :root { --sidebar-w: 200px; }
       body { padding-top: 0; padding-left: var(--sidebar-w); }
+
+      /* Sidebar container */
       nav {
         top: 0; bottom: 0; left: 0; right: auto;
         width: var(--sidebar-w); height: 100vh;
         flex-direction: column; align-items: flex-start;
         border-bottom: none; border-right: 1px solid var(--border);
-        padding: 24px 8px 24px; gap: 4px;
+        padding: 24px 8px 16px; gap: 0;
         justify-content: flex-start;
+        overflow: visible;
       }
       .nav-title {
         font-size: 18px; padding: 0 12px 20px;
@@ -99,12 +102,19 @@
         width: 100%; flex: none; margin-bottom: 8px;
       }
       .nav-menu-btn { display: none; }
-      .nav-current   { display: none; }
+      .nav-current  { display: none; }
+
+      /* Nav links sit below the top bar as part of the sidebar */
       .nav-dropdown {
-        display: flex !important; flex-direction: column;
-        position: static; background: none; border: none;
-        border-radius: 0; padding: 0; box-shadow: none;
-        min-width: unset; width: 100%;
+        position: fixed;
+        top: calc(var(--nav-h) + 8px);
+        left: 0;
+        width: var(--sidebar-w);
+        display: flex !important;
+        flex-direction: column;
+        background: none; border: none;
+        border-radius: 0; padding: 0 8px;
+        box-shadow: none; min-width: unset;
       }
       .nav-dropdown a {
         border-radius: 8px; font-size: 14px;
@@ -253,6 +263,7 @@
   </button>
 </nav>
 
+<!-- Nav links — dropdown on mobile, inline on desktop sidebar -->
 <div class="nav-dropdown" id="navDropdown">
   <a href="{{ url_for('index') }}"
      class="{% if request.endpoint == 'index' %}active{% endif %}">
