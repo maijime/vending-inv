@@ -26,28 +26,57 @@
       color: var(--text);
       font-size: 15px;
       line-height: 1.5;
-      /* mobile: pad bottom for nav bar + browser chrome */
-      padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 32px);
+      padding-top: var(--nav-h);
     }
 
-    /* ── Bottom nav (mobile) ── */
+    /* ── Top nav bar ── */
     nav {
-      position: fixed; bottom: 0; left: 0; right: 0;
+      position: fixed; top: 0; left: 0; right: 0;
       height: var(--nav-h);
       background: var(--surface);
-      border-top: 1px solid var(--border);
-      display: flex;
-      padding-bottom: env(safe-area-inset-bottom);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 16px;
       z-index: 100;
+      gap: 12px;
     }
-    nav a {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 3px; color: var(--muted); text-decoration: none;
-      font-size: 11px; font-weight: 500; transition: color .15s;
+    .nav-title {
+      font-size: 17px; font-weight: 700; color: var(--text); flex: 1;
     }
-    nav a.active, nav a:active { color: var(--accent); }
-    nav a svg { width: 22px; height: 22px; }
+    .nav-menu-btn {
+      background: none; border: none; color: var(--text);
+      cursor: pointer; padding: 6px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nav-menu-btn:active { background: var(--border); }
+    .nav-menu-btn svg { width: 22px; height: 22px; }
+
+    /* current page pill */
+    .nav-current {
+      font-size: 13px; font-weight: 600; color: var(--accent);
+      background: rgba(59,130,246,.12); border-radius: 20px;
+      padding: 4px 12px;
+    }
+
+    /* dropdown */
+    .nav-dropdown {
+      display: none; position: fixed;
+      top: calc(var(--nav-h) + 4px); right: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 6px;
+      z-index: 200; min-width: 180px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    }
+    .nav-dropdown.open { display: block; }
+    .nav-dropdown a {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 14px; border-radius: 8px;
+      color: var(--muted); text-decoration: none;
+      font-size: 15px; font-weight: 500; transition: background .1s;
+    }
+    .nav-dropdown a.active { color: var(--accent); background: rgba(59,130,246,.1); }
+    .nav-dropdown a:active { background: var(--border); }
+    .nav-dropdown a svg { width: 18px; height: 18px; flex-shrink: 0; }
 
     /* ── Page ── */
     .page { padding: 16px; max-width: 680px; margin: 0 auto; }
@@ -55,47 +84,31 @@
     /* ── Desktop layout: left sidebar nav ── */
     @media (min-width: 768px) {
       :root { --sidebar-w: 200px; }
-      body {
-        padding-bottom: 0;
-        padding-left: var(--sidebar-w);
-      }
+      body { padding-top: 0; padding-left: var(--sidebar-w); }
       nav {
         top: 0; bottom: 0; left: 0; right: auto;
-        width: var(--sidebar-w);
-        height: 100vh;
-        flex-direction: column;
-        border-top: none;
-        border-right: 1px solid var(--border);
-        padding-bottom: 0;
-        padding-top: 24px;
+        width: var(--sidebar-w); height: 100vh;
+        flex-direction: column; align-items: flex-start;
+        border-bottom: none; border-right: 1px solid var(--border);
+        padding: 24px 8px 24px; gap: 4px;
         justify-content: flex-start;
-        gap: 4px;
       }
-      nav::before {
-        content: 'Vending';
-        display: block;
-        font-size: 18px;
-        font-weight: 700;
-        color: var(--text);
-        padding: 0 20px 24px;
+      .nav-title {
+        font-size: 18px; padding: 0 12px 20px;
         border-bottom: 1px solid var(--border);
-        margin-bottom: 8px;
-        width: 100%;
+        width: 100%; flex: none; margin-bottom: 8px;
       }
-      nav a {
-        flex: none;
-        flex-direction: row;
-        justify-content: flex-start;
-        width: 100%;
-        padding: 10px 20px;
-        font-size: 14px;
-        gap: 12px;
-        border-radius: 8px;
-        margin: 0 8px;
-        width: calc(100% - 16px);
+      .nav-menu-btn { display: none; }
+      .nav-current   { display: none; }
+      .nav-dropdown {
+        display: flex !important; flex-direction: column;
+        position: static; background: none; border: none;
+        border-radius: 0; padding: 0; box-shadow: none;
+        min-width: unset; width: 100%;
       }
-      nav a svg { width: 20px; height: 20px; flex-shrink: 0; }
-      nav a.active { background: rgba(59,130,246,.15); color: var(--accent); }
+      .nav-dropdown a {
+        border-radius: 8px; font-size: 14px;
+      }
       .page { padding: 24px 32px; max-width: 860px; }
     }
 
@@ -221,8 +234,26 @@
   {% block content %}{% endblock %}
 </main>
 
-<!-- Bottom nav (4 tabs — Restock removed, handled via slot modal) -->
+<!-- Top nav bar -->
+{% set page_labels = {
+  'index': 'Machine', 'products': 'Products', 'update_product': 'Products',
+  'add_product': 'Products', 'delete_product': 'Products',
+  'sales': 'Sales', 'settings': 'Settings'
+} %}
+{% set current_label = page_labels.get(request.endpoint, 'Vending') %}
 <nav>
+  <span class="nav-title">Vending</span>
+  <span class="nav-current">{{ current_label }}</span>
+  <button class="nav-menu-btn" onclick="toggleNavMenu()" aria-label="Menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="3" y1="6"  x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+</nav>
+
+<div class="nav-dropdown" id="navDropdown">
   <a href="{{ url_for('index') }}"
      class="{% if request.endpoint == 'index' %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -264,7 +295,7 @@
     </svg>
     Settings
   </a>
-</nav>
+</div>
 
 <!-- Slot detail modal (slide-up sheet) -->
 <div class="modal-overlay" id="slotModal">
@@ -280,6 +311,18 @@
 </div>
 
 <script>
+  // Nav dropdown
+  function toggleNavMenu() {
+    document.getElementById('navDropdown').classList.toggle('open');
+  }
+  document.addEventListener('click', function(e) {
+    const dd  = document.getElementById('navDropdown');
+    const btn = document.querySelector('.nav-menu-btn');
+    if (dd && btn && !dd.contains(e.target) && !btn.contains(e.target)) {
+      dd.classList.remove('open');
+    }
+  });
+
   let _slotData = null;
 
   function openSlot(itemNum) {
