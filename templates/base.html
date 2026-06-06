@@ -377,10 +377,20 @@
 
       <hr>
 
-      <!-- Swap product -->
+      <!-- Swap product (collapsed by default) -->
       <div style="margin-top:14px">
-        <div class="card-title">Swap Product — ${d.category}</div>
-        <div style="background:var(--bg);border-radius:8px;padding:8px">
+        <button onclick="toggleSwap()" id="swapToggleBtn"
+                class="btn btn-outline btn-block"
+                style="justify-content:space-between">
+          <span>Swap Product</span>
+          <span id="swapChevron" style="font-size:18px;line-height:1">›</span>
+        </button>
+        <div id="swapPanel" style="display:none;margin-top:8px;
+             background:var(--bg);border-radius:8px;padding:8px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;
+                      letter-spacing:.05em;font-weight:600;padding:4px 4px 10px">
+            ${d.category}
+          </div>
           ${pickerItems ||
             '<div style="color:var(--muted);font-size:13px;padding:8px">No products in this category — add them in Products.</div>'}
         </div>
@@ -397,6 +407,14 @@
       headers: {'Content-Type': 'application/json'},
       body:    JSON.stringify({ qty, date }),
     }).then(() => { closeModal(); location.reload(); });
+  }
+
+  function toggleSwap() {
+    const panel   = document.getElementById('swapPanel');
+    const chevron = document.getElementById('swapChevron');
+    const open    = panel.style.display === 'none';
+    panel.style.display   = open ? 'block' : 'none';
+    chevron.style.transform = open ? 'rotate(90deg)' : '';
   }
 
   function swapProduct(itemNum, newName) {
