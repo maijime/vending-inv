@@ -88,20 +88,20 @@ def get_vending_data(date_str: str):
         # Get items from database
         conn = db.get_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT item_num, item_name, capacity, unit_cost FROM items WHERE active = 1')
+        cursor.execute('SELECT item_num, name, capacity FROM slots WHERE active = 1')
         db_items = {row['item_num']: dict(row) for row in cursor.fetchall()}
         conn.close()
-        
+
         # Initialize inventory tracking
         inventory = {}
         for item_num, item_data in db_items.items():
             inventory[item_num] = {
                 'item_num': item_num,
-                'item_name': item_data['item_name'],
+                'item_name': item_data['name'],
                 'capacity': item_data['capacity'],
                 'sold': 0,
                 'total_amount': 0.00,
-                'unit_cost': item_data['unit_cost']
+                'unit_cost': 0.0
             }
         
         # Process sales

@@ -407,6 +407,22 @@ def get_sales_export(start_date: str, end_date: str) -> List[Dict]:
     return results
 
 
+def save_daily_data(date_str: str, sales_data: list):
+    """Insert or replace daily sales records from the scraper."""
+    conn = get_connection()
+    c = conn.cursor()
+    for item in sales_data:
+        if item['sold'] == 0:
+            continue
+        c.execute('''INSERT OR REPLACE INTO daily_sales
+                     (date, item_num, quantity_sold, price, revenue, cost, profit)
+                     VALUES (?,?,?,?,?,?,?)''',
+                  (date_str, item['item_num'], item['sold'],
+                   item['price'], item['sales'], item['cost'], item['profit']))
+    conn.commit()
+    conn.close()
+
+
 # ---------------------------------------------------------------------------
 # Settings
 # ---------------------------------------------------------------------------
