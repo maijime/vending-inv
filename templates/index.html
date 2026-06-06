@@ -12,9 +12,17 @@
   }
 
   /* Snack rows */
-  .snack-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .snack-row {
+    display: flex; gap: 8px; margin-bottom: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .snack-row::-webkit-scrollbar { display: none; }
   .slot-card {
-    flex: 1;
+    flex: 0 0 auto;
+    width: 80px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -23,7 +31,6 @@
     cursor: pointer;
     transition: border-color .15s, transform .1s;
     position: relative;
-    min-width: 0;
   }
   .slot-card:active { transform: scale(.96); }
   .slot-card.low    { border-color: var(--red); }
