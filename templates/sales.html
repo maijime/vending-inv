@@ -1,6 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Sales{% endblock %}
 
+{% block head %}
+<style>
+  /* Hide profit column on small screens */
+  @media (max-width: 480px) {
+    .col-profit { display: none; }
+    .col-revenue { font-size: 13px; }
+  }
+  .table td, .table th { padding: 10px 6px; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page">
   <div class="page-title">Sales</div>
@@ -25,7 +36,7 @@
   </form>
 
   <!-- Summary cards -->
-  <div class="summary-row">
+  <div class="summary-row" style="margin-bottom:12px">
     <div class="summary-card">
       <div class="val">${{ '%.2f'|format(summary.total_revenue or 0) }}</div>
       <div class="lbl">Revenue</div>
@@ -40,7 +51,7 @@
     </div>
   </div>
 
-  <!-- Top items -->
+  <!-- By item -->
   {% if by_item %}
   <div class="card">
     <div class="card-title">By Item</div>
@@ -50,16 +61,16 @@
           <th>Item</th>
           <th class="text-right">Sold</th>
           <th class="text-right">Revenue</th>
-          <th class="text-right">Profit</th>
+          <th class="text-right col-profit">Profit</th>
         </tr>
       </thead>
       <tbody>
         {% for item in by_item %}
         <tr>
-          <td>{{ item.name or item.item_num }}</td>
-          <td class="text-right">{{ item.total_sold }}</td>
-          <td class="text-right text-green">${{ '%.2f'|format(item.total_revenue) }}</td>
-          <td class="text-right text-green">${{ '%.2f'|format(item.total_profit) }}</td>
+          <td style="font-weight:500">{{ item.name or item.item_num }}</td>
+          <td class="text-right" style="color:var(--muted)">{{ item.total_sold }}</td>
+          <td class="text-right text-green col-revenue">${{ '%.2f'|format(item.total_revenue) }}</td>
+          <td class="text-right text-green col-profit">${{ '%.2f'|format(item.total_profit) }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -77,23 +88,23 @@
           <th>Date</th>
           <th class="text-right">Items</th>
           <th class="text-right">Revenue</th>
-          <th class="text-right">Profit</th>
+          <th class="text-right col-profit">Profit</th>
         </tr>
       </thead>
       <tbody>
         {% for day in daily_sales %}
         <tr>
-          <td>{{ day.date }}</td>
-          <td class="text-right">{{ day.items_sold }}</td>
+          <td style="font-size:13px">{{ day.date }}</td>
+          <td class="text-right" style="color:var(--muted)">{{ day.items_sold }}</td>
           <td class="text-right">${{ '%.2f'|format(day.revenue) }}</td>
-          <td class="text-right text-green">${{ '%.2f'|format(day.profit) }}</td>
+          <td class="text-right text-green col-profit">${{ '%.2f'|format(day.profit) }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   {% else %}
-  <div class="card" style="text-align:center;color:var(--muted)">
+  <div class="card" style="text-align:center;color:var(--muted);padding:32px">
     No sales data for this range.
   </div>
   {% endif %}

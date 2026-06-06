@@ -5,20 +5,6 @@
 <div class="page">
   <div class="page-title">Settings</div>
 
-  <!-- Low stock threshold -->
-  <div class="card">
-    <div class="card-title">Low Stock Alert</div>
-    <form method="POST">
-      <input type="hidden" name="action" value="threshold">
-      <div class="form-group">
-        <label>Alert when slot drops below</label>
-        <input type="number" name="low_stock_threshold"
-               value="{{ low_stock_threshold or 3 }}" min="1" max="20">
-      </div>
-      <button type="submit" class="btn btn-primary btn-block">Save</button>
-    </form>
-  </div>
-
   <!-- Info -->
   <div class="card">
     <div class="card-title">Info</div>
