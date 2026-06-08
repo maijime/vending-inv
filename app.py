@@ -133,13 +133,17 @@ def reset_password():
 _collection_lock = threading.Lock()
 
 def _should_collect():
-    """Return True if data hasn't been collected in the last 30 minutes."""
+    """Return True if within business hours and data is stale (>30 min old)."""
+    now = datetime.now()
+    # Weekdays only (Mon=0 … Fri=4), between 7am and 4pm
+    if now.weekday() > 4 or not (7 <= now.hour < 16):
+        return False
     last = db.get_setting('last_collection_time')
     if not last:
         return True
     try:
         last_dt = datetime.fromisoformat(last)
-        return (datetime.now() - last_dt).total_seconds() > 1800  # 30 min
+        return (now - last_dt).total_seconds() > 1800  # 30 min
     except Exception:
         return True
 
