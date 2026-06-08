@@ -6,7 +6,7 @@ from flask_login import (LoginManager, UserMixin, login_user, logout_user,
                          login_required, current_user)
 from datetime import datetime, timedelta
 from functools import wraps
-import csv, io, os, random, smtplib
+import csv, io, os, random, smtplib, threading
 from email.mime.text import MIMEText
 import bcrypt
 import database as db
@@ -127,6 +127,43 @@ def reset_password():
 
 
 # ---------------------------------------------------------------------------
+# Background data collection
+# ---------------------------------------------------------------------------
+
+_collection_lock = threading.Lock()
+
+def _should_collect():
+    """Return True if data hasn't been collected in the last 30 minutes."""
+    last = db.get_setting('last_collection_time')
+    if not last:
+        return True
+    try:
+        last_dt = datetime.fromisoformat(last)
+        return (datetime.now() - last_dt).total_seconds() > 1800  # 30 min
+    except Exception:
+        return True
+
+def _run_collection():
+    """Scrape today's data in a background thread (one at a time)."""
+    if not _collection_lock.acquire(blocking=False):
+        return  # Already running
+    try:
+        db.set_setting('last_collection_time', datetime.now().isoformat())
+        from collect_data import collect_daily_data
+        today = datetime.now().strftime('%Y-%m-%d')
+        collect_daily_data(today)
+        print(f"[auto-collect] Done for {today}")
+    except Exception as e:
+        print(f"[auto-collect] Error: {e}")
+    finally:
+        _collection_lock.release()
+
+def trigger_collection_if_needed():
+    if _should_collect():
+        threading.Thread(target=_run_collection, daemon=True).start()
+
+
+# ---------------------------------------------------------------------------
 # Machine layout
 # ---------------------------------------------------------------------------
 
@@ -160,6 +197,7 @@ def _build_machine(slots_by_num):
 @app.route('/')
 @login_required
 def index():
+    trigger_collection_if_needed()
     slots = db.get_slots_with_levels()
     slots_by_num = {s['item_num']: s for s in slots}
     machine = _build_machine(slots_by_num)
