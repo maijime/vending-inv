@@ -29,6 +29,7 @@ def build_report():
     today_sum     = db.get_sales_summary(today, today)
     yesterday_sum = db.get_sales_summary(yesterday, yesterday)
     week_sum      = db.get_sales_summary(week_start, today)
+    today_items   = db.get_sales_by_item(today, today)
 
     low_slots = [s for s in slots if s['current_level'] < threshold]
 
@@ -118,6 +119,30 @@ def build_report():
       {stat_card('This Week', week_sum['total_revenue'] or 0,      week_sum['total_profit'] or 0,      week_sum['total_items'] or 0)}
     </tr>
   </table>
+
+  <!-- Today's sales breakdown -->
+  {"" if not today_items else f'''
+  <div style="background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;
+              padding:4px 8px 8px;margin-bottom:20px">
+    <div style="font-size:11px;color:#64748b;text-transform:uppercase;
+                letter-spacing:.06em;font-weight:600;padding:12px 8px 4px">
+      Today's Sales
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding:4px 8px;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:.05em">Item</td>
+        <td style="padding:4px 8px;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:.05em;text-align:right;width:40px">Sold</td>
+        <td style="padding:4px 8px;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:.05em;text-align:right;width:70px">Revenue</td>
+      </tr>
+      {"".join(f"""
+      <tr>
+        <td style="padding:6px 8px;font-size:13px;color:#e2e8f0;border-top:1px solid #2a2d3a">{item['name'] or item['item_num']}</td>
+        <td style="padding:6px 8px;font-size:13px;color:#94a3b8;text-align:right;border-top:1px solid #2a2d3a">{item['total_sold']}</td>
+        <td style="padding:6px 8px;font-size:13px;color:#22c55e;font-weight:600;text-align:right;border-top:1px solid #2a2d3a">${item['total_revenue']:.2f}</td>
+      </tr>""" for item in today_items)}
+    </table>
+  </div>
+  '''}
 
   <!-- Machine status -->
   <div style="background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;
