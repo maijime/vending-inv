@@ -245,7 +245,7 @@ def slot_detail(item_num):
     c.execute('''SELECT COALESCE(SUM(quantity_sold),0) as sold,
                         COALESCE(SUM(revenue),0)       as revenue,
                         COALESCE(SUM(profit),0)        as profit
-                 FROM daily_sales WHERE item_num=? AND date >= ?''',
+                 FROM daily_sales WHERE item_num=? AND date > ?''',
               (item_num, fill_date))
     since_fill = dict(c.fetchone())
 

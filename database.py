@@ -198,7 +198,7 @@ def get_slots_with_levels() -> List[Dict]:
         if s['last_fill_date'] and s['last_fill_qty'] is not None:
             c.execute('''SELECT COALESCE(SUM(quantity_sold), 0) as sold
                          FROM daily_sales
-                         WHERE item_num=? AND date >= ?''',
+                         WHERE item_num=? AND date > ?''',
                       (s['item_num'], s['last_fill_date']))
             sold = c.fetchone()['sold']
             s['current_level'] = max(0, s['last_fill_qty'] - sold)
