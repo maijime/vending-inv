@@ -225,12 +225,6 @@ def fill_slot(item_num: str, qty: int, date: str) -> bool:
     c = conn.cursor()
     c.execute('''UPDATE slots SET last_fill_qty=?, last_fill_date=?
                  WHERE item_num=?''', (qty, date, item_num))
-    # Also deduct from shared home_stock by name
-    c.execute('SELECT name FROM slots WHERE item_num=?', (item_num,))
-    row = c.fetchone()
-    if row:
-        c.execute('UPDATE slots SET home_stock = MAX(home_stock - ?, 0) WHERE name=?',
-                  (qty, row['name']))
     conn.commit()
     conn.close()
     return True
