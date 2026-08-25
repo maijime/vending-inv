@@ -418,6 +418,12 @@
           </div>
           ${pickerItems ||
             '<div style="color:var(--muted);font-size:13px;padding:8px">No products in this category — add them in Products.</div>'}
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Or type a new product name:</div>
+            <input id="swapCustomName" type="text" placeholder="e.g. Inca Kola"
+                   style="width:100%;box-sizing:border-box"
+                   oninput="_slotData._customName=this.value.trim()">
+          </div>
         </div>
       </div>
     `;
@@ -428,7 +434,8 @@
     const date = document.getElementById('fillDate').value;
     if (isNaN(qty) || qty < 0) { alert('Enter a valid quantity.'); return; }
 
-    const selectedName = _slotData._selectedName || _slotData.name;
+    const customName   = (_slotData._customName || '').trim();
+    const selectedName = customName || _slotData._selectedName || _slotData.name;
     const needsSwap    = selectedName !== _slotData.name;
 
     const doFill = () =>
