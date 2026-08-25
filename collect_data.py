@@ -43,15 +43,7 @@ def get_vending_data(date_str: str):
 
         # Wait for post-login redirect to settle before navigating
         time.sleep(5)
-        print(f"  Post-login URL: {driver.current_url}")
-        driver.get("https://seedlive.com/reports/build.i")
-        time.sleep(2)
-        print(f"  Report page URL: {driver.current_url}")
-        print(f"  Page title: {driver.title}")
-        # Save page source for debugging
-        with open('/tmp/seedlive_debug.html', 'w') as f:
-            f.write(driver.page_source)
-        print(f"  Page source saved to /tmp/seedlive_debug.html")
+        driver.get("https://seedlive.com/activity_parameters.i?usage=B&selectedTab=10&selectedMenuItem=130&profileId=192860")
 
         # ── Set date range ───────────────────────────────────────────────────
         print(f"  Setting date to {date_str}...")
