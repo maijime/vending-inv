@@ -41,9 +41,10 @@ def get_vending_data(date_str: str):
         driver.find_element(By.NAME, "password").send_keys(os.getenv('SEED_PASSWORD'))
         driver.find_element(By.CSS_SELECTOR, "input[type='submit'][value='Sign In']").click()
 
-        # Direct URL — SeedLive keeps URL as login.i even after success
-        time.sleep(3)
+        # Wait for post-login redirect to settle before navigating
+        time.sleep(5)
         driver.get("https://seedlive.com/reports/build.i")
+        time.sleep(2)
 
         # ── Set date range ───────────────────────────────────────────────────
         print(f"  Setting date to {date_str}...")
