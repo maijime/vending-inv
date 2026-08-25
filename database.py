@@ -77,6 +77,7 @@ def init_database():
         ('category',       "TEXT NOT NULL DEFAULT 'Snacks'"),
         ('last_fill_qty',  'INTEGER'),
         ('last_fill_date', 'DATE'),
+        ('unit_cost',      'REAL NOT NULL DEFAULT 0.0'),
     ]:
         try:
             c.execute(f'ALTER TABLE slots ADD COLUMN {col} {definition}')
@@ -272,7 +273,7 @@ def get_products() -> List[Dict]:
     """Unique products grouped by name, with category."""
     conn = get_connection()
     c = conn.cursor()
-    c.execute('''SELECT name, category, home_stock,
+    c.execute('''SELECT name, category, home_stock, unit_cost,
                         COUNT(*) as slot_count,
                         GROUP_CONCAT(item_num, ', ') as slots,
                         MAX(capacity) as capacity
@@ -295,28 +296,20 @@ def get_products_by_category(category: str) -> List[Dict]:
     return results
 
 
-def update_product(name: str, new_name: str, home_stock: int, category: str = None):
+def update_product(name: str, new_name: str, home_stock: int,
+                   category: str = None, unit_cost: float = 0.0):
     conn = get_connection()
     c = conn.cursor()
-    if category:
-        c.execute('UPDATE slots SET name=?, home_stock=?, category=? WHERE name=?',
-                  (new_name, home_stock, category, name))
-    else:
-        c.execute('UPDATE slots SET name=?, home_stock=? WHERE name=?',
-                  (new_name, home_stock, name))
+    c.execute('UPDATE slots SET name=?, home_stock=?, category=?, unit_cost=? WHERE name=?',
+              (new_name, home_stock, category or 'Snacks', unit_cost, name))
     conn.commit()
     conn.close()
 
 
 def delete_product(name: str) -> bool:
+    """Soft-delete: deactivate regardless of sales history."""
     conn = get_connection()
     c = conn.cursor()
-    c.execute('''SELECT COUNT(*) FROM daily_sales ds
-                 JOIN slots s ON ds.item_num = s.item_num
-                 WHERE s.name=?''', (name,))
-    if c.fetchone()[0] > 0:
-        conn.close()
-        return False
     c.execute('UPDATE slots SET active=0 WHERE name=?', (name,))
     conn.commit()
     conn.close()
@@ -324,13 +317,23 @@ def delete_product(name: str) -> bool:
 
 
 def add_slot(item_num: str, name: str, capacity: int,
-             home_stock: int = 0, category: str = 'Snacks') -> bool:
+             home_stock: int = 0, category: str = 'Snacks',
+             unit_cost: float = 0.0) -> bool:
+    """Add a slot. If item_num is blank, auto-generate a catalog ID."""
+    if not item_num:
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("SELECT item_num FROM slots WHERE item_num LIKE 'cat_%' ORDER BY item_num DESC LIMIT 1")
+        row = c.fetchone()
+        conn.close()
+        last = int(row['item_num'].split('_')[1]) if row else 0
+        item_num = f'cat_{last+1:03d}'
     conn = get_connection()
     c = conn.cursor()
     try:
-        c.execute('''INSERT INTO slots (item_num, name, capacity, home_stock, category)
-                     VALUES (?,?,?,?,?)''',
-                  (item_num, name, capacity, home_stock, category))
+        c.execute('''INSERT INTO slots (item_num, name, capacity, home_stock, category, unit_cost)
+                     VALUES (?,?,?,?,?,?)''',
+                  (item_num, name, capacity, home_stock, category, unit_cost))
         conn.commit()
         conn.close()
         return True
@@ -405,14 +408,20 @@ def save_daily_data(date_str: str, sales_data: list):
     """Insert or replace daily sales records from the scraper."""
     conn = get_connection()
     c = conn.cursor()
+    # Load unit costs from slots
+    c.execute('SELECT item_num, unit_cost FROM slots')
+    costs = {row['item_num']: row['unit_cost'] for row in c.fetchall()}
     for item in sales_data:
         if item['sold'] == 0:
             continue
+        unit_cost = costs.get(item['item_num'], 0.0)
+        cost      = round(unit_cost * item['sold'], 2)
+        profit    = round(item['sales'] - cost, 2)
         c.execute('''INSERT OR REPLACE INTO daily_sales
                      (date, item_num, quantity_sold, price, revenue, cost, profit)
                      VALUES (?,?,?,?,?,?,?)''',
                   (date_str, item['item_num'], item['sold'],
-                   item['price'], item['sales'], item['cost'], item['profit']))
+                   item['price'], item['sales'], cost, profit))
     conn.commit()
     conn.close()
 

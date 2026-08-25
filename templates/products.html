@@ -39,17 +39,7 @@
     <form method="POST" action="{{ url_for('add_product') }}">
       <div class="form-group">
         <label>Product name</label>
-        <input type="text" name="name" placeholder="e.g. Doritos" required>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group">
-          <label>Slot # (e.g. 0121)</label>
-          <input type="text" name="item_num" placeholder="0121" maxlength="4" required>
-        </div>
-        <div class="form-group">
-          <label>Capacity</label>
-          <input type="number" name="capacity" value="7" min="1" required>
-        </div>
+        <input type="text" name="name" placeholder="e.g. Pepsi" required>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="form-group">
@@ -60,6 +50,22 @@
             {% endfor %}
           </select>
         </div>
+        <div class="form-group">
+          <label>Cost per unit ($)</label>
+          <input type="number" name="unit_cost" value="0.00" min="0" step="0.01">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label>Slot # <span style="color:var(--muted)">(optional)</span></label>
+          <input type="text" name="item_num" placeholder="e.g. 0121" maxlength="4">
+        </div>
+        <div class="form-group">
+          <label>Capacity</label>
+          <input type="number" name="capacity" value="7" min="1">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="form-group">
           <label>Home stock</label>
           <input type="number" name="home_stock" value="0" min="0">
@@ -109,9 +115,13 @@
                 </select>
               </div>
               <div class="form-group">
-                <label>Home stock</label>
-                <input type="number" name="home_stock" value="{{ p.home_stock }}" min="0">
+                <label>Cost per unit ($)</label>
+                <input type="number" name="unit_cost" value="{{ '%.2f'|format(p.unit_cost or 0) }}" min="0" step="0.01">
               </div>
+            </div>
+            <div class="form-group">
+              <label>Home stock</label>
+              <input type="number" name="home_stock" value="{{ p.home_stock }}" min="0">
             </div>
             <div style="display:flex;gap:8px">
               <button type="submit" class="btn btn-primary" style="flex:1">Save</button>
@@ -125,7 +135,7 @@
             <button type="submit" class="btn btn-danger btn-block btn-sm">Remove "{{ p.name }}"</button>
           </form>
           <p style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center">
-            Products with sales history cannot be deleted — rename instead.
+            Sales history is preserved even after removal.
           </p>
         </div>
       </div>

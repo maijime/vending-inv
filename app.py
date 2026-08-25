@@ -319,8 +319,9 @@ def update_product():
     new_name      = request.form.get('name', '').strip()
     home_stock    = int(request.form.get('home_stock', 0))
     category      = request.form.get('category', 'Snacks')
+    unit_cost     = float(request.form.get('unit_cost', 0))
     if original_name and new_name:
-        db.update_product(original_name, new_name, home_stock, category)
+        db.update_product(original_name, new_name, home_stock, category, unit_cost)
         flash(f'"{new_name}" updated.', 'success')
     return redirect(url_for('products'))
 
@@ -329,13 +330,16 @@ def update_product():
 @login_required
 def add_product():
     name       = request.form.get('name', '').strip()
-    item_num   = request.form.get('item_num', '').strip().zfill(4)
+    item_num   = request.form.get('item_num', '').strip()
+    if item_num:
+        item_num = item_num.zfill(4)
     capacity   = int(request.form.get('capacity', 7))
     home_stock = int(request.form.get('home_stock', 0))
     category   = request.form.get('category', 'Snacks')
-    if name and item_num:
-        if db.add_slot(item_num, name, capacity, home_stock, category):
-            flash(f'"{name}" added to slot {item_num}.', 'success')
+    unit_cost  = float(request.form.get('unit_cost', 0))
+    if name:
+        if db.add_slot(item_num, name, capacity, home_stock, category, unit_cost):
+            flash(f'"{name}" added.', 'success')
         else:
             flash(f'Slot #{item_num} already exists.', 'error')
     return redirect(url_for('products'))
@@ -346,10 +350,8 @@ def add_product():
 def delete_product():
     name = request.form.get('name', '').strip()
     if name:
-        if db.delete_product(name):
-            flash(f'"{name}" removed.', 'success')
-        else:
-            flash(f'Cannot remove "{name}" — it has sales history. Rename it instead.', 'error')
+        db.delete_product(name)
+        flash(f'"{name}" removed.', 'success')
     return redirect(url_for('products'))
 
 
